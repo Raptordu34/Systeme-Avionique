@@ -43,39 +43,6 @@
             exigences de sécurité de l'aviation civile. Un seul composant défaillant = tout l'avion hors service.
         </div>
 
-        <div class="figure-box">
-            <div style="display:flex; justify-content:center; align-items:center; gap: 3rem; padding: 1.5rem 0; flex-wrap: wrap;">
-                <!-- Centralisée -->
-                <div style="text-align:center;">
-                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="25" y="25" width="30" height="30" rx="4" fill="rgba(214,117,86,0.15)" stroke="#d67556" stroke-width="1.5"/>
-                        <line x1="40" y1="25" x2="40" y2="10" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
-                        <line x1="40" y1="55" x2="40" y2="70" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
-                        <line x1="25" y1="40" x2="10" y2="40" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
-                        <line x1="55" y1="40" x2="70" y2="40" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
-                        <text x="40" y="74" text-anchor="middle" font-family="Inter" font-size="8" fill="#9e9a94">Centralisée</text>
-                    </svg>
-                </div>
-                <!-- Vers -->
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 20 12 L 13 6.5 L 13 10 Q 5 10 4.5 12 Q 5 14 13 14 L 13 17.5 Z" fill="#9e9a94" opacity="0.5"/>
-                </svg>
-                <!-- Répartie -->
-                <div style="text-align:center;">
-                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="10" y="10" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
-                        <rect x="55" y="10" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
-                        <rect x="10" y="55" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
-                        <rect x="55" y="55" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
-                        <path d="M 25 17 L 50 17" stroke="#d67556" stroke-width="1" stroke-dasharray="2 1"/>
-                        <path d="M 17 25 L 17 50" stroke="#d67556" stroke-width="1" stroke-dasharray="2 1"/>
-                        <text x="40" y="74" text-anchor="middle" font-family="Inter" font-size="8" fill="#9e9a94">Répartie</text>
-                    </svg>
-                </div>
-            </div>
-            <figcaption>Fig. 1 — Évolution : du calculateur unique (SPOF) aux unités autonomes (LRU)</figcaption>
-        </div>
-
         <h3>Architecture fédérale</h3>
         <p>
             Pour remédier à la vulnérabilité de l'architecture centralisée, l'architecture fédérale distribue
@@ -305,55 +272,11 @@
             le label "température moteur". C'est un mécanisme de <em>filtrage par abonnement</em> simple,
             sans overhead protocolaire — ce qui explique l'efficacité du bus sur des débits très faibles.
         </div>
-<h4>Topologie du réseau ARINC 429</h4>
 
-<div class="figure-box">
-    <div style="display:flex; justify-content:center; align-items:center; gap: 1rem; padding: 1.5rem 0; flex-wrap: wrap;">
-        <!-- Emetteur -->
-        <div style="text-align:center;">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="12" y="10" width="56" height="52" rx="4" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
-                <circle cx="22" cy="20" r="2.5" fill="#d67556" opacity="0.7"/>
-                <text x="40" y="74" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#d67556">Émetteur</text>
-            </svg>
-        </div>
-        <!-- Bus line -->
-        <div style="display:flex; flex-direction:column; align-items:center; width: 120px;">
-            <svg width="120" height="24" viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <line x1="0" y1="20" x2="200" y2="20" stroke="#d67556" stroke-width="2" stroke-linecap="round"/>
-                <path d="M 192 20 L 183 14 Q 186 20 183 26 Z" fill="#d67556"/>
-            </svg>
-            <!-- Taps -->
-            <div style="display:flex; justify-content:space-around; width: 100%; margin-top: -4px;">
-                <svg width="12" height="20" viewBox="0 0 16 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="8" y1="0" x2="8" y2="30" stroke="#9e9a94" stroke-width="1.5"/>
-                    <circle cx="8" cy="0" r="3" fill="#d67556"/>
-                </svg>
-                <svg width="12" height="20" viewBox="0 0 16 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="8" y1="0" x2="8" y2="30" stroke="#9e9a94" stroke-width="1.5"/>
-                    <circle cx="8" cy="0" r="3" fill="#d67556"/>
-                </svg>
-            </div>
-        </div>
-        <!-- Recepteurs -->
-        <div style="display:flex; flex-direction:column; gap: 0.5rem;">
-            <svg width="100" height="32" viewBox="0 0 100 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="98" height="30" rx="6" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
-                <text x="50" y="20" text-anchor="middle" font-family="Inter" font-size="9" fill="#9e9a94">Récepteur 1</text>
-            </svg>
-            <svg width="100" height="32" viewBox="0 0 100 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="98" height="30" rx="6" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
-                <text x="50" y="20" text-anchor="middle" font-family="Inter" font-size="9" fill="#9e9a94">Récepteur 2</text>
-            </svg>
-        </div>
-    </div>
-    <figcaption>Fig. 2 — Topologie ARINC 429 : diffusion mono-émetteur / multi-récepteurs</figcaption>
-</div>
-
-<ul>
-    <li><strong>Mono-émetteur :</strong> un seul équipement peut émettre sur un bus donné</li>
-    <li><strong>Multi-destinataires :</strong> jusqu'à <strong>20 récepteurs</strong> maximum par bus (en pratique, 95% des bus A340 ont moins de 10 récepteurs)</li>
-...
+        <h4>Topologie du réseau ARINC 429</h4>
+        <ul>
+            <li><strong>Mono-émetteur :</strong> un seul équipement peut émettre sur un bus donné</li>
+            <li><strong>Multi-destinataires :</strong> jusqu'à <strong>20 récepteurs</strong> maximum par bus (en pratique, 95% des bus A340 ont moins de 10 récepteurs)</li>
             <li><strong>Longueur maximale :</strong> 100 mètres par segment de bus</li>
             <li>Un équipement peut avoir <em>plusieurs bus en émission et en réception simultanément</em></li>
         </ul>
