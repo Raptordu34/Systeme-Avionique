@@ -43,6 +43,31 @@
             exigences de sécurité de l'aviation civile. Un seul composant défaillant = tout l'avion hors service.
         </div>
 
+        <div class="figure-box">
+            <svg width="860" height="220" viewBox="0 0 860 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="24" y="62" width="240" height="56" rx="10" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="144" y="86" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Architecture centralisée</text>
+                <text x="144" y="102" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">1 calculateur global (SPOF)</text>
+
+                <line x1="278" y1="90" x2="334" y2="90" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 341 90 L 334 85.5 Q 336 90 334 94.5 Z" fill="#d67556"/>
+
+                <rect x="348" y="62" width="240" height="56" rx="10" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <text x="468" y="86" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Architecture fédérale</text>
+                <text x="468" y="102" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">calculateurs par domaine</text>
+
+                <line x1="602" y1="90" x2="658" y2="90" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 665 90 L 658 85.5 Q 660 90 658 94.5 Z" fill="#d67556"/>
+
+                <rect x="672" y="62" width="164" height="56" rx="10" fill="rgba(91,166,160,0.1)" stroke="#5ba6a0" stroke-width="1.5"/>
+                <text x="754" y="86" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Architecture répartie</text>
+                <text x="754" y="102" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">1 LRU = 1 fonction</text>
+
+                <text x="430" y="158" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#d67556">Évolution des compromis: sécurité locale vs complexité globale</text>
+            </svg>
+            <figcaption>Fig. 1 — Passage de la centralisation vers la répartition fonctionnelle</figcaption>
+        </div>
+
         <h3>Architecture fédérale</h3>
         <p>
             Pour remédier à la vulnérabilité de l'architecture centralisée, l'architecture fédérale distribue
@@ -281,6 +306,37 @@
             <li>Un équipement peut avoir <em>plusieurs bus en émission et en réception simultanément</em></li>
         </ul>
 
+        <div class="figure-box">
+            <svg width="760" height="240" viewBox="0 0 760 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="52" y="96" width="170" height="48" rx="8" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <text x="137" y="115" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">LRU émetteur</text>
+                <text x="137" y="130" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">propriétaire du bus</text>
+
+                <line x1="224" y1="120" x2="344" y2="58" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 350 55 L 342 54 Q 345 58 343 62 Z" fill="#d67556"/>
+
+                <line x1="224" y1="120" x2="344" y2="120" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 351 120 L 344 115.5 Q 346 120 344 124.5 Z" fill="#d67556"/>
+
+                <line x1="224" y1="120" x2="344" y2="182" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 350 185 L 343 178 Q 345 182 342 186 Z" fill="#d67556"/>
+
+                <rect x="356" y="34" width="180" height="44" rx="8" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="446" y="60" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Récepteur 1</text>
+
+                <rect x="356" y="98" width="180" height="44" rx="8" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="446" y="124" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Récepteur 2</text>
+
+                <rect x="356" y="162" width="180" height="44" rx="8" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="446" y="188" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Récepteur 3</text>
+
+                <text x="603" y="109" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#d67556">Bus ARINC 429</text>
+                <text x="603" y="126" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">mono-émetteur</text>
+                <text x="603" y="141" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">multi-récepteurs</text>
+            </svg>
+            <figcaption>Fig. 2 — Topologie type d'un bus ARINC 429: diffusion unidirectionnelle</figcaption>
+        </div>
+
         <h4>Bilan ARINC 429 — avantages et limites</h4>
 
         <div class="compare-grid">
@@ -324,6 +380,29 @@
                 <span class="metric-value">368</span>
                 <span class="metric-label">Bus — A340 (1993)</span>
             </div>
+        </div>
+
+        <div class="figure-box">
+            <svg width="360" height="240" viewBox="0 0 360 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="44" y1="18" x2="44" y2="202" stroke="#9e9a94" stroke-width="1" opacity="0.4" stroke-linecap="round"/>
+                <line x1="44" y1="202" x2="332" y2="202" stroke="#9e9a94" stroke-width="1" opacity="0.4" stroke-linecap="round"/>
+
+                <rect x="74" y="197" width="32" height="5" rx="2" fill="rgba(214,117,86,0.45)"/>
+                <text x="90" y="220" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#9e9a94">A300</text>
+
+                <rect x="126" y="134" width="32" height="68" rx="2" fill="rgba(214,117,86,0.6)"/>
+                <text x="142" y="220" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#9e9a94">A310</text>
+
+                <rect x="178" y="76" width="32" height="126" rx="2" fill="rgba(214,117,86,0.72)"/>
+                <text x="194" y="220" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#9e9a94">A320</text>
+
+                <rect x="230" y="18" width="32" height="184" rx="2" fill="#d67556"/>
+                <text x="246" y="220" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#9e9a94">A340</text>
+
+                <text x="246" y="14" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#d67556">368 bus</text>
+                <text x="180" y="234" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#9e9a94">Explosion du nombre de bus ARINC 429</text>
+            </svg>
+            <figcaption>Fig. 3 — Croissance du câblage avionique Airbus (A300B → A340)</figcaption>
         </div>
 
         <p>

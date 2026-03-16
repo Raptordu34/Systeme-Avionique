@@ -86,6 +86,30 @@
             (EASA, FAA) : les réseaux de confort ne doivent en aucun cas influencer les systèmes de vol.
         </div>
 
+        <div class="figure-box">
+            <svg width="720" height="220" viewBox="0 0 720 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="30" y="64" width="200" height="56" rx="10" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="130" y="87" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Réseau Sol/Bord</text>
+                <text x="130" y="103" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#9e9a94">VHF / SATCOM / ATC</text>
+
+                <rect x="260" y="64" width="200" height="56" rx="10" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <text x="360" y="87" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Réseau Passagers (IFE)</text>
+                <text x="360" y="103" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#9e9a94">Ethernet cabine</text>
+
+                <rect x="490" y="64" width="200" height="56" rx="10" fill="rgba(91,166,160,0.1)" stroke="#5ba6a0" stroke-width="1.5"/>
+                <text x="590" y="87" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#dedad5">Réseau Avionique</text>
+                <text x="590" y="103" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#9e9a94">AFDX / bus critiques</text>
+
+                <line x1="230" y1="92" x2="260" y2="92" stroke="#9e9a94" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"/>
+                <line x1="460" y1="92" x2="490" y2="92" stroke="#9e9a94" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"/>
+
+                <text x="360" y="34" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#d67556">Séparation physique et logique obligatoire</text>
+                <line x1="86" y1="156" x2="634" y2="156" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <text x="360" y="178" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#9e9a94">Aucune interconnexion directe non certifiée entre les domaines</text>
+            </svg>
+            <figcaption>Fig. 1 — Ségrégation des trois domaines de communication à bord</figcaption>
+        </div>
+
         <h3>Objectifs du cours</h3>
 
         <p>Ce cours suit un fil directeur en quatre temps :</p>
@@ -111,6 +135,31 @@
                 pour l'A380 et l'A350 pour interconnecter les modules IMA.
             </li>
         </ul>
+
+        <div class="figure-box">
+            <svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="20" y="58" width="160" height="44" rx="8" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <text x="100" y="76" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Historique</text>
+                <text x="100" y="90" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">CDVE, certification</text>
+
+                <line x1="192" y1="80" x2="264" y2="80" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 271 80 L 264 75.5 Q 266 80 264 84.5 Z" fill="#d67556"/>
+
+                <rect x="280" y="58" width="160" height="44" rx="8" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <text x="360" y="76" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Architecture</text>
+                <text x="360" y="90" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">fédérée vers IMA</text>
+
+                <line x1="452" y1="80" x2="524" y2="80" stroke="#d67556" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 531 80 L 524 75.5 Q 526 80 524 84.5 Z" fill="#d67556"/>
+
+                <rect x="540" y="58" width="160" height="44" rx="8" fill="rgba(91,166,160,0.1)" stroke="#5ba6a0" stroke-width="1.5"/>
+                <text x="620" y="76" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#dedad5">Réseau AFDX</text>
+                <text x="620" y="90" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#9e9a94">composants et configuration</text>
+
+                <text x="360" y="140" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#d67556">Fil directeur du cours</text>
+            </svg>
+            <figcaption>Fig. 2 — Progression pédagogique: du contexte historique aux choix IMA/AFDX</figcaption>
+        </div>
 
         <div class="callout-info">
             <strong>Périmètre Airbus :</strong> ce cours s'appuie sur les choix technologiques d'Airbus.
