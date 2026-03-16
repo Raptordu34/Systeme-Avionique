@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Introduction — Les systèmes avioniques et leurs spécificités</h2>
+
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Trois familles de systèmes</strong> — transactionnels (calculs batch sans contrainte de temps), interactifs (temps de réponse statistiquement acceptable), réactifs (contraintes temporelles imposées par l'environnement physique). Les systèmes avioniques sont des systèmes <em>réactifs temps réel dur</em>.</li>
+            <li><strong>Temps réel ≠ temps rapide</strong> — un système temps réel est correct uniquement si ses résultats sont produits <em>dans les délais imposés</em> ; en mode dur (<em>hard</em>), tout dépassement d'échéance est une défaillance, même si le résultat est logiquement juste.</li>
+            <li><strong>Spécificités avioniques</strong> — contraintes environnementales sévères (−56 °C, vibrations, rayonnements), sûreté ≤ 10⁻⁹ défaillance/heure de vol, durée de vie totale ~80 ans, certifiabilité obligatoire (EASA/FAA), et part croissante dans la valeur de l'avion (50 % aujourd'hui).</li>
+        </ul>
+    </div>
+
+    <div class="detailed-content">
+
+        <!-- ── 1. FAMILLES DE SYSTÈMES ── -->
+        <h3>Les trois familles de systèmes informatiques</h3>
+        <p>
+            Avant de définir les systèmes avioniques, il est utile de les situer dans le paysage plus large des systèmes informatiques. On distingue trois grandes familles, qui diffèrent essentiellement par leur rapport au temps et à leur environnement.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="Systèmes transactionnels">
+                <p>Les données sont disponibles dès le départ ; les calculs s'exécutent <strong>sans contrainte de temps imposée</strong>.</p>
+                <ul>
+                    <li>Calcul scientifique (simulation CFD, mécanique des fluides)</li>
+                    <li>Rendu graphique 3D (images de synthèse, VFX cinéma)</li>
+                    <li>Traitement de données en batch (big data)</li>
+                </ul>
+                <p class="inline-note">Analogie : un étudiant résout un problème à son propre rythme, sans horloge — seule la bonne réponse compte.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Systèmes interactifs">
+                <p>Un utilisateur humain intervient ; le temps de réponse est une <strong>valeur statistique</strong> : quelques secondes de latence sont tolérées.</p>
+                <ul>
+                    <li>Services web, bases de données en ligne</li>
+                    <li>Jeux vidéo (60 fps visé, quelques drops tolérés)</li>
+                    <li>Interfaces graphiques (GUI)</li>
+                </ul>
+                <p class="inline-note">Analogie : un serveur au restaurant — quelques minutes d'attente sont tolérables, tant que le repas finit par arriver.</p>
+            </div>
+            <div class="compare-item good" data-label="Systèmes réactifs">
+                <p><strong>Assujettis à l'environnement physique</strong> ; les contraintes temporelles sont imposées de l'extérieur et ne peuvent être négociées.</p>
+                <ul>
+                    <li>ABS (frein antiblocage automobile)</li>
+                    <li>Calculateur de commandes de vol</li>
+                    <li>Pacemaker cardiaque, déclencheur d'airbag</li>
+                </ul>
+                <p class="inline-note">Analogie : un chef d'orchestre qui doit battre la mesure exactement au bon moment — pas une fraction de seconde de retard, même si le résultat final sonnerait juste.</p>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Point clé :</strong> Les systèmes avioniques appartiennent à la famille des systèmes <em>réactifs</em>. Ils ne choisissent pas quand agir : c'est l'environnement (dynamique de l'avion, événements physiques externes) qui impose le rythme.
+        </div>
+
+        <!-- ── 2. SYSTÈMES RÉACTIFS ── -->
+        <h3>Systèmes réactifs : la boucle action–environnement</h3>
+        <p>
+            Un système réactif fonctionne en <strong>boucle fermée permanente</strong> avec son environnement. Il ne traite pas des données stockées en avance : il <em>observe</em> le monde, <em>décide</em>, puis <em>agit</em>, avant d'observer à nouveau, sans jamais s'arrêter.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Cycle fondamental d'un système réactif :</strong><br><br>
+            <em>Système réactif</em> → émet une <strong>Action</strong> sur l'environnement →
+            <em>Environnement physique</em> → change d'état et génère un <strong>Événement</strong> →
+            <em>Système réactif</em> → perçoit l'événement, décide, agit à nouveau…
+            <br><br>
+            Ce cycle se répète indéfiniment, tant que le système est en fonctionnement.
+        </div>
+
+        <p>
+            Appliqué à un système de contrôle embarqué, ce cycle abstrait se concrétise en trois rôles matériels distincts, interconnectés en boucle :
+        </p>
+        <ul>
+            <li><strong>Actionneurs</strong> — convertissent les ordres numériques en actions physiques (servocommandes de gouvernes, moteurs électriques, vannes hydrauliques…). Ce sont les "muscles" du système.</li>
+            <li><strong>Procédé contrôlé</strong> — le système physique piloté : dynamique de vol, température de cabine, niveau de carburant… C'est la "réalité" que le système cherche à maîtriser.</li>
+            <li><strong>Capteurs</strong> — mesurent l'état courant du procédé (accéléromètres, gyroscopes, sondes de pression, thermocouples…) et renvoient l'information au calculateur. Ce sont les "yeux et oreilles" du système.</li>
+        </ul>
+
+        <div class="tip-box">
+            L'<strong>exécutif temps réel</strong> (Real-Time Operating System, RTOS) est le chef d'orchestre logiciel central. Son rôle est de garantir que chaque tâche logicielle s'exécute exactement dans sa fenêtre temporelle allouée, et que les tâches les plus critiques (ex. : stabilisation de vol) ne soient jamais retardées par des tâches secondaires (ex. : affichage d'un paramètre en cockpit).
+        </div>
+
+        <!-- ── 3. TEMPS RÉEL ── -->
+        <h3>Systèmes temps réel : définition et caractéristiques</h3>
+
+        <div class="highlight-box">
+            <strong>Définition (Stankovic, 1988) :</strong> « Un système temps réel est un système pour lequel sa <em>correction</em> ne dépend pas seulement des résultats logiques produits, mais également du <em>temps</em> auquel ces résultats sont fournis. »
+        </div>
+
+        <p>
+            Cette définition brise une intuition naturelle. En informatique classique, un programme est "correct" s'il produit le bon résultat, quel que soit le temps mis. En temps réel, un résultat juste livré trop tard est une <strong>défaillance à part entière</strong>, exactement au même titre qu'un résultat faux.
+        </p>
+
+        <div class="callout-warning">
+            <strong>Idée fausse à corriger :</strong> "Temps réel" ne signifie pas "très rapide". Un système qui répond en 1 seconde de façon <em>garantie et certifiable</em> est un système temps réel. Un PC qui répond en 1 ms <em>en moyenne</em> mais peut être gelé 5 secondes par une mise à jour système ou un antivirus n'en est <em>pas un</em> — ses délais ne sont pas bornés avec certitude.
+        </div>
+
+        <h4>Temps réel dur vs temps réel mou</h4>
+        <p>
+            Selon la criticité des conséquences d'un dépassement d'échéance, on distingue deux régimes :
+        </p>
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Temps réel dur (hard real-time)">
+                <p>Tout dépassement d'échéance constitue une <strong>défaillance du système</strong>. La valeur utile du résultat tombe à zéro — voire devient négative (une commande envoyée trop tard peut déstabiliser un système).</p>
+                <ul>
+                    <li>Commandes de vol (Fly-By-Wire) — boucle à 10 ms</li>
+                    <li>Déclenchement d'airbag — décision en &lt; 30 ms</li>
+                    <li>Contrôle de réacteur nucléaire</li>
+                    <li>Systèmes d'injection moteur automobile</li>
+                </ul>
+            </div>
+            <div class="compare-item good" data-label="Temps réel mou (soft real-time)">
+                <p>Les dépassements d'échéance <strong>dégradent la qualité de service</strong> mais ne provoquent pas de défaillance critique. Le système reste utilisable.</p>
+                <ul>
+                    <li>Streaming vidéo (quelques images perdues)</li>
+                    <li>Affichage météo en cockpit (légère latence tolérée)</li>
+                    <li>Système de divertissement passagers (IFE)</li>
+                    <li>Guidage GPS grand public</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>Les trois qualités d'un bon système temps réel</h4>
+        <ul>
+            <li><strong>Efficace</strong> — le taux d'utilisation du processeur doit être optimal : ni sous-chargé (gaspillage de ressources, donc de masse et d'énergie embarquée), ni surchargé (risque de dépassement d'échéance dans les pires cas de charge).</li>
+            <li><strong>Fiable</strong> — <em>toutes</em> les contraintes temporelles sont respectées en toutes circonstances, y compris lors du pire scénario de charge simultanée de toutes les tâches. On parle d'analyse WCET (Worst-Case Execution Time).</li>
+            <li><strong>Prédictible</strong> — dans un état donné du système, la décision prise est toujours identique. Cette propriété est indispensable à la certification : les autorités (EASA, FAA) doivent pouvoir vérifier le comportement par analyse, pas seulement par test.</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Certifiabilité :</strong> Un système avionique ne se contente pas de <em>fonctionner</em> — il doit être <em>prouvable</em>. Cela exige une architecture déterministe, des analyses de pire cas d'exécution (WCET), et des processus de développement normés : <strong>DO-178C</strong> pour le logiciel et <strong>DO-254</strong> pour le matériel électronique complexe.
+        </div>
+
+        <!-- ── 4. EXEMPLE COMMANDES DE VOL ── -->
+        <h3>Exemple concret : les commandes de vol (Fly-By-Wire)</h3>
+        <p>
+            Les commandes de vol électriques illustrent parfaitement ce qu'est un système temps réel dur embarqué. Sur un Airbus A320, <strong>aucune liaison mécanique directe</strong> ne relie les manches du pilote aux gouvernes : tout transit par des calculateurs qui interprètent les ordres, appliquent les lois de commande, et protègent l'enveloppe de vol — en moins de 10 millisecondes.
+        </p>
+
+        <div class="key-value">
+            <dt>Mission</dt>           <dd>Stabiliser l'avion en asservissant les surfaces mobiles (gouvernes de direction, ailerons, spoilers, empennage horizontal)</dd>
+            <dt>Entrées</dt>           <dd>Attitude de l'avion via capteurs inertiels (accéléromètres, gyroscopes), ordres des manches pilote, données air (vitesse, incidence)</dd>
+            <dt>Sorties</dt>           <dd>Ordres électriques vers les servocommandes de gouvernes (actionneurs) ; alarmes et signalisations vers le FWS</dd>
+            <dt>Contrainte temporelle</dt> <dd>Boucle de contrôle interne à 10 ms (100 Hz) — un dépassement peut provoquer une divergence de l'asservissement et déstabiliser l'avion</dd>
+            <dt>Tolérance aux pannes</dt>  <dd>Moins de 10⁻⁹ défaillances catastrophiques par heure de vol (exigence DAL A, norme ARP 4761)</dd>
+        </div>
+
+        <p>
+            La probabilité de 10⁻⁹ par heure de vol est un chiffre difficile à appréhender intuitivement. Pour le contextualiser : un avion qui vole 10 000 heures par an pendant 40 ans accumule 400 000 heures. Un taux de 10⁻⁹/h signifie qu'il faudrait <strong>2,5 millions d'avions identiques volant toute leur vie</strong> pour espérer observer, en probabilité, une seule défaillance catastrophique. Pour atteindre cette cible, les concepteurs combinent plusieurs stratégies complémentaires :
+        </p>
+
+        <ul class="steps">
+            <li><strong>Redondance</strong> — plusieurs calculateurs identiques exécutent les mêmes algorithmes en parallèle. Leurs résultats sont comparés ("vote majoritaire") avant d'envoyer la commande ; si un calculateur dévie, il est isolé automatiquement.</li>
+            <li><strong>Ségrégation spatiale</strong> — les calculateurs redondants sont physiquement éloignés les uns des autres dans l'avion (avant/milieu/arrière, côté gauche/droit) pour éviter qu'un seul événement localisé (impact foudre, dépressurisation partielle, explosion moteur) ne les détruise simultanément.</li>
+            <li><strong>Dissimilarité</strong> — les calculateurs peuvent être de technologies différentes (processeurs de familles distinctes, logiciels développés par des équipes indépendantes avec des langages différents) pour éliminer les bugs de conception communs (Common Cause Failures).</li>
+            <li><strong>Génération automatique de code</strong> — des outils comme SCADE (Esterel Technologies / Ansys) génèrent automatiquement du code certifié DO-178C à partir de modèles formels, éliminant les erreurs d'implémentation manuelle. Le modèle <em>est</em> le code.</li>
+        </ul>
+
+        <div class="callout-danger">
+            <strong>Criticité maximale :</strong> La perte totale des commandes de vol sur un avion civil entraîne un accident catastrophique avec perte de toutes vies à bord. Ce scénario est classé en niveau de criticité <em>Catastrophique</em> (DAL A dans ARP 4761), imposant les exigences de développement les plus strictes : chaque ligne de code doit être vérifiée, chaque exigence tracée, chaque décision justifiée et auditée par l'autorité de certification.
+        </div>
+
+        <!-- ── 5. DÉFINITION AVIONIQUE ── -->
+        <h3>Les systèmes avioniques : définition et composition</h3>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> Les <em>systèmes avioniques</em> désignent l'ensemble des moyens informatiques embarqués à bord d'un aéronef (avion civil ou militaire, lanceur spatial, satellite, hélicoptère…). Le terme est la contraction d'<em>aviation</em> et d'<em>électronique</em>.
+        </div>
+
+        <p>
+            Un avion moderne comme l'A380 embarque plus de <strong>180 systèmes</strong> et plus de <strong>200 calculateurs</strong>, interconnectés par plusieurs bus de données de technologies différentes. Ces systèmes se répartissent en trois couches orthogonales : matériel, logiciel, et domaine de responsabilité.
+        </p>
+
+        <h4>Matériel (hardware)</h4>
+        <ul>
+            <li><strong>Calculateurs (ACE, CCR, FCC…)</strong> — le cerveau numérique de chaque fonction. Sur Airbus, les calculateurs sont systématiquement redondants (2 ou 3 exemplaires par fonction critique), souvent de technologies dissimilaires.</li>
+            <li><strong>Bus et réseaux de communication</strong> — l'autoroute d'échange de données entre systèmes. Les standards avioniques incluent : <em>ARINC 429</em> (bus unidirectionnel point-à-point, héritage des années 1970), <em>ARINC 664 / AFDX</em> (Ethernet commuté temps réel déterministe, utilisé sur A380 et A350), <em>MIL-STD-1553</em> (domaine militaire).</li>
+            <li><strong>Passerelles et concentrateurs</strong> — font le pont entre des réseaux de technologies différentes, par exemple entre le monde AFDX moderne (A664) et les bus ARINC 429 hérités des équipements plus anciens.</li>
+        </ul>
+
+        <h4>Logiciel (software)</h4>
+        <ul>
+            <li><strong>Logiciels applicatifs</strong> — implémentent les fonctions métier : pilote automatique, gestion du carburant, navigation, avertisseurs… Développés et certifiés selon la norme <em>DO-178C</em> (Software Considerations in Airborne Systems).</li>
+            <li><strong>Logiciels exécutifs (RTOS)</strong> — gèrent l'ordonnancement temps réel et le partitionnement des ressources. Le standard <em>ARINC 653 / APEX</em> définit une interface normalisée entre le RTOS et les applications, permettant le <em>partitionnement temporel et spatial</em> : plusieurs applications cohabitent sur un même calculateur physique sans pouvoir s'interférer ni en temps, ni en mémoire.</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>ARINC 653 en pratique — l'analogie de l'immeuble :</strong> Imaginez un immeuble de bureaux où chaque locataire (application logicielle) dispose d'un étage entièrement cloisonné. L'ascenseur (l'exécutif temps réel) leur donne accès aux ressources communes (CPU, réseau) à tour de rôle, selon un plan prédéfini et immuable. Un locataire ne peut ni "cambrioler" l'étage voisin (partitionnement spatial — isolation mémoire), ni monopoliser l'ascenseur au détriment des autres (partitionnement temporel — fenêtres d'exécution fixes). Résultat : une application de divertissement passager bugguée ne peut pas affecter le calculateur de commandes de vol qui partage le même matériel.
+        </div>
+
+        <h4>Domaines de responsabilité</h4>
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Cœur avionique">
+                <p>Responsabilité exclusive du <strong>constructeur</strong> (Airbus, Boeing, Dassault…). Systèmes de vol, propulsion, structure. Certification EASA/FAA obligatoire. Aucune modification par la compagnie aérienne sans recertification.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Domaine compagnie">
+                <p>Responsabilité <strong>partagée</strong> entre le constructeur et la compagnie. Systèmes de gestion opérationnelle (fuel planning, connectivité ACARS, suivi de maintenance) partiellement configurables.</p>
+            </div>
+            <div class="compare-item good" data-label="Domaine passagers">
+                <p>Responsabilité de la <strong>compagnie aérienne</strong>. Systèmes de divertissement embarqué (IFE), connectivité WiFi passagers, éclairage dynamique cabine. Exigences de certification moins strictes (non-critique pour le vol).</p>
+            </div>
+        </div>
+
+        <!-- ── 6. EXEMPLE SYSTÈME DE GUIDAGE ── -->
+        <h3>Architecture exemple : le système de guidage en cascade</h3>
+        <p>
+            Le guidage d'un avion en vol automatique implique plusieurs systèmes qui travaillent en <strong>cascade hiérarchique</strong> avec des fréquences décroissantes — illustration parfaite de l'architecture temps réel à niveaux multiples.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Système</th>
+                        <th>Nom complet</th>
+                        <th>Rôle</th>
+                        <th>Cadence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>FMS</strong></td>
+                        <td>Flight Management System</td>
+                        <td>Calcule le plan de vol optimal (route, altitude, vitesse) et envoie des consignes de guidage au FGS</td>
+                        <td><span class="badge badge-blue">500 ms</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>FGS</strong></td>
+                        <td>Flight Guidance System</td>
+                        <td>Traduit les consignes de navigation en consignes de pilotage pour le FCS (pilote automatique)</td>
+                        <td><span class="badge badge-orange">50 ms</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>FCS</strong></td>
+                        <td>Flight Control System</td>
+                        <td>Asservit les gouvernes pour suivre les consignes de pilotage ; boucle interne de stabilité aérodynamique</td>
+                        <td><span class="badge badge-red">10 ms</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>FWS</strong></td>
+                        <td>Flight Warning System</td>
+                        <td>Surveille l'ensemble des paramètres avion et génère les alarmes affichées sur l'EIS (cockpit)</td>
+                        <td><span class="badge badge-blue">Variable</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>EIS</strong></td>
+                        <td>Engine Information System</td>
+                        <td>Unités de visualisation cockpit : alarmes, paramètres moteurs, état des systèmes</td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-info">
+            <strong>Pourquoi des cadences si différentes ?</strong> La dynamique de vol s'organise en plusieurs "couches" temporelles. La stabilité aérodynamique instantanée nécessite une correction à 10 ms — au-delà, un avion instable (comme le Rafale ou l'A320 en mode dégradé) peut diverger. Le guidage tactique (trajectoire sur quelques secondes) peut se contenter de 50 ms. La planification stratégique de la route (sur des minutes) n'a besoin d'être recalculée qu'à 500 ms. Cette hiérarchie de boucles imbriquées est la marque d'architecture des systèmes de contrôle temps réel complexes.
+        </div>
+
+        <!-- ── 7. SPÉCIFICITÉS ── -->
+        <h3>Spécificités des systèmes avioniques</h3>
+
+        <h4>Contraintes environnementales</h4>
+        <p>
+            Un avion commercial vole en <strong>troposphère et basse stratosphère</strong> (jusqu'à ~13 km d'altitude pour les subsoniques, ~18 km pour le Concorde), dans un environnement radicalement hostile par rapport aux conditions au sol :
+        </p>
+        <ul>
+            <li><strong>Température</strong> — de +50 °C au sol en zone tropicale jusqu'à −56 °C à la tropopause (frontière troposphère/stratosphère, altitude de croisière des avions de ligne). Les calculateurs doivent fonctionner sur cette plage complète, y compris lors d'un démarrage "cold soak" (avion laissé au froid plusieurs heures).</li>
+            <li><strong>Pression atmosphérique</strong> — chute de 1 013 hPa au niveau de la mer à environ 200 hPa à 12 000 m. Cette basse pression réduit l'efficacité du refroidissement par convection d'air et peut créer des arcs électriques dans les connecteurs haute tension.</li>
+            <li><strong>Vibrations et chocs mécaniques</strong> — décollage (accélération longitudinale), turbulences en vol, atterrissage (choc vertical sur le train). Les cartes électroniques subissent des accélérations répétées qui fatiguent les soudures et les connecteurs.</li>
+            <li><strong>Rayonnements ionisants</strong> — à haute altitude, le bouclier magnétique terrestre est moins efficace et le flux de rayons cosmiques augmente significativement. Ces rayonnements peuvent provoquer des <em>Single Event Upsets</em> (SEU) : inversion spontanée d'un bit en mémoire. Des mécanismes de détection et correction d'erreur (ECC — Error Correcting Code) sont obligatoires dans les systèmes critiques.</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Référence normative :</strong> Ces contraintes environnementales sont quantifiées dans la norme <em>DO-160G</em> (Environmental Conditions and Test Procedures for Airborne Equipment), qui définit les épreuves à réaliser sur tout équipement avionique avant certification : essais en température, vibrations, humidité, compatibilité électromagnétique (EMC), foudre…
+        </div>
+
+        <h4>Sûreté de fonctionnement : l'aviation, transport le plus sûr au kilomètre</h4>
+        <p>
+            Comparée aux autres modes de transport <strong>par kilomètre parcouru</strong>, l'aviation civile est le plus sûr d'après les statistiques de l'Union Européenne :
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Moyen de transport</th>
+                        <th>Tués / 100 M pass.-km (1999)</th>
+                        <th>Tués / 100 M pass.-km (2001–2002)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Motocyclette / cyclomoteur</td><td>16</td><td>13,8</td></tr>
+                    <tr><td>Déplacement pédestre</td><td>7,5</td><td>6,4</td></tr>
+                    <tr><td>Bicyclette</td><td>6,3</td><td>5,4</td></tr>
+                    <tr><td>Voiture</td><td>0,8</td><td>0,7</td></tr>
+                    <tr><td>Navire transbordeur</td><td>0,33</td><td>0,25</td></tr>
+                    <tr><td>Autobus / autocar</td><td>0,08</td><td>0,07</td></tr>
+                    <tr><td><strong>Air (aviation civile)</strong></td><td><strong>0,08</strong></td><td><strong>0,035</strong></td></tr>
+                    <tr><td>Train</td><td>0,04</td><td>0,035</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="source">Source : Union Européenne, statistiques de transport 1999 et 2001–2002</p>
+
+        <div class="callout-warning">
+            <strong>Nuance importante — la métrique par heure change le classement :</strong> L'avion parcourt beaucoup plus de kilomètres par heure que la voiture. Ramené à 100 millions de passagers-heures, l'aviation civile (36,5 morts en 1999, 16 en 2001–2002) est moins bien classée que le train ou l'autocar (2 morts chacun). Cela ne remet pas en cause la sécurité absolue de l'aviation, mais illustre qu'aucune métrique unique ne capture toute la réalité.
+        </div>
+
+        <p>
+            Ce qui importe au-delà des statistiques, c'est la <strong>dimension psychologique et médiatique</strong> : un accident d'avion fait la une de la presse mondiale pendant des semaines et entraîne enquêtes officielles, procès, et revues de certification. Un accident de voiture, même mortel, est rarement mentionné au-delà de la presse locale. Cette asymétrie d'exposition médiatique exerce une pression structurelle considérable sur les exigences de sécurité de l'industrie aéronautique — et c'est une bonne chose.
+        </p>
+        <p>
+            En cas de défaillance sérieuse d'une voiture, un conducteur peut s'arrêter sur le bord de la route. <strong>En avion, en croisière à 10 000 m d'altitude, il n'existe pas de "bord de route".</strong> Cette irréversibilité fondamentale des situations de vol justifie des exigences de sûreté radicalement plus élevées que pour tout autre domaine de l'ingénierie.
+        </p>
+
+        <h4>Certification et autorités de réglementation</h4>
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="EASA — Europe">
+                <p><strong>European Aviation Safety Agency</strong> — Autorité de certification pour les aéronefs et équipements opérant en Europe. Émet les <em>Type Certificates</em> (TC) pour les nouveaux types d'appareils. Siège à Cologne, Allemagne.</p>
+            </div>
+            <div class="compare-item neutral" data-label="FAA — États-Unis">
+                <p><strong>Federal Aviation Administration</strong> — Homologue américain. Une certification FAA ouvre le marché américain, le plus grand au monde pour l'aviation commerciale. Airbus doit donc obtenir une validation FAA de ses certifications EASA.</p>
+            </div>
+        </div>
+        <div class="callout-info">
+            <strong>Certification croisée :</strong> EASA et FAA ont conclu des accords bilatéraux de validation mutuelle. Airbus certifie ses appareils auprès de l'EASA (autorité de référence) et obtient ensuite une validation FAA. Boeing fait l'inverse. Les autres grandes puissances aéronautiques (CAAC en Chine, TCCA au Canada, ANAC au Brésil…) ont leurs propres autorités mais reconnaissent généralement les certifications EASA/FAA comme base.
+        </div>
+
+        <h4>Quantités produites et coûts unitaires</h4>
+        <p>
+            L'industrie avionique est un secteur de <strong>très petites séries à coût unitaire très élevé</strong>, à l'opposé de l'électronique grand public. Cette caractéristique structure profondément la logique économique du développement.
+        </p>
+
+        <div class="metrics-grid">
+            <div class="metric-card accent">
+                <span class="metric-value">~4 300</span>
+                <span class="metric-label">A320 livrés</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">~77 M$</span>
+                <span class="metric-label">Prix catalogue A320</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">72</span>
+                <span class="metric-label">A380 livrés</span>
+            </div>
+            <div class="metric-card bad">
+                <span class="metric-value">~390 M$</span>
+                <span class="metric-label">Prix catalogue A380</span>
+            </div>
+        </div>
+
+        <p>
+            À titre de comparaison : <strong>30 millions de VW Golf</strong> ont été vendues en 40 ans (~20 k€/unité) et <strong>plus d'un milliard d'iPhone</strong> en 10 ans (&lt; 1 k€/unité). L'avionique n'amortit jamais ses coûts de développement sur de grands volumes — chaque système doit être économiquement viable même à quelques centaines d'exemplaires et quelques milliers de calculateurs. Cette contrainte encourage fortement la standardisation, la réutilisation et les architectures modulaires.
+        </p>
+
+        <div class="tip-box">
+            Cette réalité économique explique le recours massif à l'<strong>IMA (Integrated Modular Avionics)</strong> : un calculateur générique standardisé héberge plusieurs fonctions avioniques différentes (gestion carburant, pressurisation, anti-givrage…), mutualisé le coût matériel et facilitant les mises à jour logicielles. L'A380 et l'A350 reposent intégralement sur cette architecture IMA avec le bus AFDX.
+        </div>
+
+        <h4>Durée de vie : un défi majeur d'obsolescence</h4>
+        <p>
+            Comparer la durée de vie d'une voiture et d'un avion révèle l'une des contraintes les plus méconnues — et les plus structurantes — de l'avionique :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="Voiture — ~30 ans total">
+                <ul>
+                    <li>Conception : 2–3 ans</li>
+                    <li>Présence au catalogue : ~10 ans</li>
+                    <li>Durée de vie utilisateur : 10–20 ans</li>
+                    <li>Pièces détachées garanties 10 ans après fin de commercialisation</li>
+                </ul>
+                <p class="inline-note">Un ingénieur qui conçoit une voiture verra sa carrière se dérouler sur plusieurs générations du produit.</p>
+            </div>
+            <div class="compare-item bad" data-label="Avion — ~80 ans total">
+                <ul>
+                    <li>Conception : ~5–10 ans</li>
+                    <li>Présence au catalogue (commandes) : 20–30 ans</li>
+                    <li>Durée d'exploitation : &gt; 40 ans</li>
+                    <li><strong>Total de conception à retraite : ~80 ans</strong></li>
+                </ul>
+                <p class="inline-note">Un ingénieur qui conçoit un avion aujourd'hui le verra voler jusqu'en 2100 — longtemps après sa propre retraite.</p>
+            </div>
+        </div>
+
+        <p>
+            Cette durée de vie de ~80 ans impose trois défis techniques et organisationnels majeurs :
+        </p>
+        <ul>
+            <li><strong>Gestion des stocks de composants</strong> — maintenir disponibles des composants électroniques pendant 40 ans d'exploitation, alors que l'industrie électronique grand public renouvelle ses gammes tous les 2–3 ans. Un microprocesseur spécifique peut ne plus être fabriqué 5 ans après sa mise en service dans un avion.</li>
+            <li><strong>Conservation du savoir-faire</strong> — les ingénieurs qui ont conçu un système en 1995 seront à la retraite bien avant la fin d'exploitation de cet avion en 2035. La documentation, la traçabilité des exigences et les outils de vérification doivent permettre à de nouveaux ingénieurs de comprendre et modifier le système des décennies après sa création.</li>
+            <li><strong>Gestion de l'obsolescence</strong> — quand un composant n'est plus fabriqué, il faut le remplacer par un équivalent fonctionnellement identique <em>sans modifier la certification</em> de l'avion, ou lancer une recertification partielle (très coûteuse). C'est l'un des postes de coût les plus importants du maintien en condition opérationnelle d'une flotte.</li>
+        </ul>
+
+        <h4>System management : gestion du cycle opérationnel complet</h4>
+        <p>
+            Contrairement à un serveur informatique que l'on peut redémarrer à tout moment sans conséquence, un système avionique doit gérer précisément <strong>chaque phase de sa vie opérationnelle</strong>, du démarrage à l'arrêt en passant par la maintenance :
+        </p>
+
+        <ul class="steps">
+            <li><strong>Mise en route (Power-on)</strong> — séquence d'initialisation strictement ordonnée, suivie des tests d'autodiagnostic BITE (Built-In Test Equipment). Le système ne se déclare opérationnel pour le vol qu'après avoir vérifié l'intégrité de tous ses composants critiques.</li>
+            <li><strong>Tests d'intégrité en vol (In-Flight Monitoring)</strong> — vérification continue que tous les composants fonctionnent dans leurs limites ; surveillance de vraisemblance entre capteurs redondants (si deux capteurs d'angle d'attaque divergent de plus d'un seuil, une alarme est générée).</li>
+            <li><strong>Maintenance interactive</strong> — interfaces de diagnostic accessibles aux techniciens au sol, avec codes de panne, historiques d'événements (ACARS pour la communication sol/bord, QAR pour l'enregistrement des paramètres). La maintenance prédictive devient un enjeu croissant.</li>
+            <li><strong>Mises à jour logicielles et gestion de configuration</strong> — chargement de nouvelles versions avec traçabilité complète (qui a chargé quoi, quelle version, sur quel appareil, à quelle date), obligatoire pour la navigabilité continue. La gestion de configuration est régie par la norme <em>DO-178C</em> et auditée par les autorités.</li>
+        </ul>
+
+        <h4>Coûts opérationnels : la disponibilité comme argument de vente</h4>
+        <p>
+            La structure des coûts d'exploitation d'un avion met en lumière une réalité économique simple : un avion immobilisé au sol continue à coûter sans générer de revenu.
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>A320 — court/moyen-courrier</strong><br>
+                Capital (achat, intérêts, assurance) <strong>32%</strong><br>
+                Carburant <strong>17%</strong> · Entretien <strong>17%</strong><br>
+                Licences logicielles <strong>12%</strong> · Équipage <strong>10%</strong><br>
+                Taxes <strong>6%</strong> · Contrôle aérien <strong>6%</strong>
+            </div>
+            <div class="highlight-box">
+                <strong>A340 — long-courrier</strong><br>
+                Capital (achat, intérêts, assurance) <strong>43%</strong><br>
+                Carburant <strong>19%</strong> · Entretien <strong>12%</strong><br>
+                Équipage <strong>10%</strong> · Taxes <strong>16%</strong>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Conséquence directe pour l'avionique :</strong> Les coûts de capital (amortissement de l'avion) tournent en permanence, que l'avion vole ou pas. Chaque heure d'immobilisation pour panne représente une perte sèche de plusieurs dizaines de milliers d'euros — plus les compensations passagers, les re-routages, et les pénalités contractuelles. La <em>disponibilité opérationnelle</em> est donc un <strong>argument de vente de premier ordre</strong> pour les constructeurs et les équipementiers, souvent plus décisif que les performances brutes.
+        </div>
+
+        <!-- ── 8. PART DES SYSTÈMES ── -->
+        <h3>Part croissante des systèmes dans la valeur de l'avion</h3>
+
+        <p>
+            Sur un avion moderne, la valeur économique se répartit en trois grandes parts :
+        </p>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">50%</span>
+                <span class="metric-label">Systèmes avioniques</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">25%</span>
+                <span class="metric-label">Moteurs</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">25%</span>
+                <span class="metric-label">Cellule (structure)</span>
+            </div>
+        </div>
+
+        <p>
+            Cette part de 50% (contre environ 20% dans les années 1970) résulte d'une tendance lourde : l'<strong>"avionification"</strong> progressive des fonctions autrefois mécaniques, hydrauliques ou pneumatiques.
+        </p>
+        <ul>
+            <li><strong>Automatisation généralisée</strong> — pilote automatique évolué, protection automatique de l'enveloppe de vol, gestion carburant autonome, gestion du centre de gravité…</li>
+            <li><strong>Optimisation fonctionnelle en temps réel</strong> — le FMS calcule en continu la trajectoire économiquement optimale en fonction de la météo, du vent, des contraintes ATC et du prix du kérosène.</li>
+            <li><strong>Interconnexion par réseau</strong> — les systèmes échangent en permanence leurs états via AFDX, permettant des fonctions émergentes impossibles autrement (corrélation de données multi-systèmes, maintenance prédictive…).</li>
+        </ul>
+
+        <div class="tip-box">
+            Les systèmes avioniques représentent le <strong>principal vecteur d'innovation et de différenciation</strong> dans l'industrie aéronautique contemporaine. Ils influencent directement les performances (réduction de consommation, allègement de charge de travail pilote), la sécurité, et l'<em>expérience passager</em> (connectivité, confort cabine, personnalisation).
+        </div>
+
+        <!-- ── 9. TAXONOMIE ── -->
+        <h3>Taxonomie des systèmes à bord</h3>
+
+        <h4>Classification par domaine fonctionnel</h4>
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Flight Control &amp; Guidance">
+                <ul>
+                    <li>Primary Flight Control (gouvernes principales)</li>
+                    <li>Secondary Flight Control (hypersustentateurs, spoilers)</li>
+                    <li>Flight Envelope Protection (protection automatique)</li>
+                    <li>Auto-Flight (pilote automatique, automanette)</li>
+                </ul>
+            </div>
+            <div class="compare-item neutral" data-label="Utility Systems">
+                <ul>
+                    <li>Fuel Management System</li>
+                    <li>Electrical Power System</li>
+                    <li>Hydraulic Energy System</li>
+                    <li>Ice &amp; Rain Protection, Gear System, APU…</li>
+                </ul>
+            </div>
+            <div class="compare-item neutral" data-label="AIMS / Cockpit">
+                <ul>
+                    <li>Flight Management System (FMS)</li>
+                    <li>Navigation System (IRS, GPS, VOR/ILS)</li>
+                    <li>Flight Warning System (FWS)</li>
+                    <li>Communication &amp; Maintenance Systems</li>
+                </ul>
+            </div>
+            <div class="compare-item good" data-label="Cabin Systems">
+                <ul>
+                    <li>Air Conditioning &amp; Pressurisation</li>
+                    <li>In-Flight Entertainment (IFE)</li>
+                    <li>Fire Protection, Oxygen System</li>
+                    <li>Cabin Information &amp; E-Power Distribution</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>Classification ATA (Air Transport Association)</h4>
+        <p>
+            L'industrie utilise la codification <strong>ATA iSpec 2200</strong> pour numéroter chaque système de façon universelle. Ce numérotage normalisé apparaît dans les manuels de maintenance, les documents de certification, les logiciels de gestion de flotte et les contrats de formation des techniciens. Il permet à n'importe quel technicien, n'importe où dans le monde, de se repérer immédiatement dans la documentation d'un avion qu'il n'a jamais vu.
+        </p>
+        <div class="callout-info">
+            <strong>Chapitres ATA particulièrement importants pour l'avionique :</strong>
+            ATA 22 (Auto Flight) · ATA 27 (Flight Controls) · ATA 31 (Indicating / Recording / Alert) ·
+            ATA 34 (Navigation) · ATA 42 (IMA / AFDX) · ATA 45 (Central Maintenance System) · ATA 46 (Network Server System).
+            Le chapitre 42 (IMA) est spécifiquement apparu avec l'A380, signe de la transformation architecturale portée par l'avionique modulaire.
+        </div>
+
+        <!-- ── 10. ACTEURS ── -->
+        <h3>L'écosystème industriel avionique</h3>
+        <p>
+            La maîtrise des systèmes avioniques est la clé d'entrée principale dans l'industrie aéronautique pour un ingénieur informatique ou électronicien. Les acteurs se répartissent en plusieurs niveaux :
+        </p>
+        <ul>
+            <li><strong>Avionneurs (intégrateurs de rang 1)</strong> — Airbus, Boeing, Dassault Aviation, Embraer : intègrent l'ensemble des systèmes, portent la responsabilité finale de la certification de l'appareil complet, et définissent les architectures de référence.</li>
+            <li><strong>Équipementiers systèmes (rang 1)</strong> — Thales Avionics, Safran Electronics &amp; Defense, Collins Aerospace (ex-Rockwell Collins), Honeywell Aerospace : conçoivent et certifient des LRU (Line Replaceable Units) complètes. Chaque LRU est certifiable indépendamment.</li>
+            <li><strong>Fournisseurs de composants et de logiciels (rang 2–3)</strong> — fournisseurs de composants électroniques qualifiés, développeurs de RTOS (Wind River VxWorks, LynxOS, Deos…), éditeurs d'outils de modélisation et de génération de code (SCADE, Matlab/Simulink avec Embedded Coder).</li>
+            <li><strong>Sociétés de service</strong> — vérification et validation indépendante (DV/IV&amp;V), intégration système, support maintenance, portage de logiciels sur nouvelles plateformes matérielles (gestion d'obsolescence).</li>
+        </ul>
+
+        <div class="tip-box">
+            Les systèmes avioniques représentent <strong>la voie la plus directe et la plus large pour travailler dans l'industrie aéronautique</strong> en tant qu'ingénieur. Les compétences requises — temps réel embarqué, réseaux de communication normés, sûreté de fonctionnement, processus de certification — sont à la fois rares, très demandées, et directement transférables vers d'autres secteurs critiques : spatial, ferroviaire, médical, automobile (AUTOSAR).
+        </div>
+
+    </div>
+
+</body>
+</html>

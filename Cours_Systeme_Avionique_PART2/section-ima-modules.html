@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>IMA — Les modules (CPIOM)</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>CPIOM</strong> — module calculateur IMA d'Airbus (A380), hébergeant jusqu'à 16 partitions logicielles sur un hardware partagé (CPU MPC755 + board IO_DSP)</li>
+            <li><strong>ACR</strong> — <em>Avionics Computing Resource</em> (DO255) : plateforme générique standardisée fournissant isolation mémoire (MMU), créneaux CPU fixes et communications séparées par partition</li>
+            <li><strong>Partitionnement</strong> — double isolation <em>spatiale</em> (MMU, débordement impossible) et <em>temporelle</em> (tranches fixes sans préemption) ; toute violation est détectée, bloquée et reportée sans impact sur les autres partitions</li>
+            <li><strong>APEX / ARINC 653</strong> — OS standardisé à deux niveaux : ordonnancement <em>statique</em> des partitions (CPM), ordonnancement <em>dynamique préemptif</em> des processus au sein de chaque partition</li>
+            <li><strong>Certification</strong> — séparation ACR Platform Provider / Application Providers / Integrator, chacun certifié DO178B indépendamment → TC/STC auprès FAA/JAA</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <h3>Le CPIOM dans l'architecture IMA Airbus</h3>
+
+        <p>
+            Dans l'IMA Airbus (A380), le principe fondamental est le <strong>partage de ressources</strong> :
+            plusieurs fonctions avioniques cohabitent sur le même calculateur physique.
+            Les applications sont regroupées en <em>partitions</em> qui se concurrencent pour l'accès
+            à deux familles de ressources communes.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Ressources d'exécution partagées">
+                <p>Temps processeur et mémoire RAM — alloués de façon <strong>statique et déterministe</strong> entre partitions selon une table figée à la conception.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Ressources de communication partagées">
+                <p>Accès réseau AFDX / ARINC 429 — chaque partition dispose de son propre <strong>créneau d'accès</strong>, géré par l'OS ARINC 653.</p>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>CPIOM</strong> — <em>Core Processing and Input/Output Module</em> : module IMA d'Airbus
+            implémentant la plateforme ACR. Il héberge jusqu'à <strong>16 partitions logicielles</strong>
+            concurrentes sur un seul calculateur physique, tout en garantissant leur isolation mutuelle
+            complète via le partitionnement spatial et temporel.
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — l'immeuble de bureaux :</strong> Le CPIOM fonctionne comme un immeuble dont
+            chaque locataire (partition) occupe un appartement séparé avec ses propres clés (zone mémoire réservée)
+            et ses horaires fixes (créneau CPU). L'immeuble (hardware) est commun, mais les murs porteurs (MMU)
+            empêchent toute intrusion entre appartements. Si un locataire provoque un incendie (bug applicatif),
+            les coupe-feux (mécanismes anti-propagation) protègent les voisins.
+        </div>
+
+        <h3>Architecture logicielle : la pile CPIOM</h3>
+
+        <p>Le CPIOM distingue deux grandes catégories de logiciels :</p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>Resident Software</strong>
+                <span class="badge badge-orange">Non rechargeable</span><br><br>
+                Logiciel embarqué en mémoire non volatile, intimement lié au hardware.
+                Ne peut <em>pas</em> être mis à jour par téléchargement en exploitation.
+                Exemples : firmware de démarrage bas niveau, code lié au FPGA de partitionnement.
+            </div>
+            <div class="highlight-box">
+                <strong>Non Resident Software</strong>
+                <span class="badge badge-blue">Téléchargeable</span><br><br>
+                Logiciel pouvant être mis à jour via le service DLCS (Data Loading and Configuration System).
+                Comprend les <em>Drivers</em> (couche Hardware Abstraction)
+                et l'<em>Executive Software / OS</em> (APEX, ARINC 653).
+            </div>
+        </div>
+
+        <p>
+            La pile logicielle complète s'organise en couches empilées, séparées par des interfaces standardisées :
+        </p>
+
+        <div class="figure-box">
+            <svg viewBox="0 0 600 310" width="600" height="310" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Partition 1 -->
+                <rect x="30" y="10" width="130" height="58" rx="6"
+                      stroke="#d67556" stroke-width="2" fill="rgba(214,117,86,0.08)"/>
+                <text x="95" y="38" text-anchor="middle" font-size="13" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="600">Partition 1</text>
+                <text x="95" y="56" text-anchor="middle" font-size="10" fill="#9e9a94"
+                      font-family="Inter,sans-serif">Application(s)</text>
+
+                <!-- Séparateur "..." -->
+                <text x="225" y="45" text-anchor="middle" font-size="24" fill="#9e9a94"
+                      font-family="Inter,sans-serif">…</text>
+
+                <!-- Partition 16 -->
+                <rect x="310" y="10" width="130" height="58" rx="6"
+                      stroke="#d67556" stroke-width="2" fill="rgba(214,117,86,0.08)"/>
+                <text x="375" y="38" text-anchor="middle" font-size="13" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="600">Partition 16</text>
+                <text x="375" y="56" text-anchor="middle" font-size="10" fill="#9e9a94"
+                      font-family="Inter,sans-serif">Application(s)</text>
+
+                <!-- Ligne API ARINC 653 (tirets orange) -->
+                <line x1="10" y1="83" x2="490" y2="83"
+                      stroke="#d67556" stroke-width="1.8" stroke-dasharray="8,4"/>
+                <text x="250" y="78" text-anchor="middle" font-size="10" fill="#d67556"
+                      font-family="Inter,sans-serif">— Application Programmer Interface (API) — ARINC 653 —</text>
+
+                <!-- Executive Software / OS -->
+                <rect x="10" y="88" width="480" height="58" rx="6"
+                      stroke="#d67556" stroke-width="2.5" fill="rgba(214,117,86,0.14)"/>
+                <text x="250" y="118" text-anchor="middle" font-size="15" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="700">Executive Software / OS (APEX)</text>
+                <text x="250" y="136" text-anchor="middle" font-size="10" fill="#9e9a94"
+                      font-family="Inter,sans-serif">Non Resident Software</text>
+
+                <!-- Ligne COEX (tirets gris) -->
+                <line x1="10" y1="160" x2="490" y2="160"
+                      stroke="#9e9a94" stroke-width="1.8" stroke-dasharray="5,3"/>
+                <text x="250" y="156" text-anchor="middle" font-size="10" fill="#9e9a94"
+                      font-family="Inter,sans-serif">— COre / EXecutive Software Interface (COEX) —</text>
+
+                <!-- Driver Software -->
+                <rect x="10" y="165" width="380" height="55" rx="6"
+                      stroke="#9e9a94" stroke-width="2" fill="rgba(158,154,148,0.13)"/>
+                <text x="200" y="196" text-anchor="middle" font-size="14" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="600">Driver Software</text>
+                <text x="200" y="212" text-anchor="middle" font-size="10" fill="#9e9a94"
+                      font-family="Inter,sans-serif">Non Resident Software</text>
+
+                <!-- Resident Software (bloc séparé à droite) -->
+                <rect x="400" y="165" width="100" height="55" rx="6"
+                      stroke="#d67556" stroke-width="2" fill="rgba(214,117,86,0.2)"/>
+                <text x="450" y="193" text-anchor="middle" font-size="12" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="600">Resident</text>
+                <text x="450" y="209" text-anchor="middle" font-size="12" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="600">Software</text>
+
+                <!-- Hardware -->
+                <rect x="10" y="234" width="490" height="55" rx="6"
+                      stroke="#9e9a94" stroke-width="2.5" fill="rgba(158,154,148,0.08)"/>
+                <text x="255" y="266" text-anchor="middle" font-size="15" fill="#f5f3f0"
+                      font-family="Inter,sans-serif" font-weight="700">Hardware</text>
+
+                <!-- Flèches bidirectionnelles Driver ↔ Hardware -->
+                <line x1="100" y1="220" x2="100" y2="234" stroke="#9e9a94" stroke-width="1.5"/>
+                <polygon points="100,234 96,226 104,226" fill="#9e9a94" stroke="none"/>
+                <line x1="200" y1="220" x2="200" y2="234" stroke="#9e9a94" stroke-width="1.5"/>
+                <polygon points="200,234 196,226 204,226" fill="#9e9a94" stroke="none"/>
+                <line x1="300" y1="220" x2="300" y2="234" stroke="#9e9a94" stroke-width="1.5"/>
+                <polygon points="300,234 296,226 304,226" fill="#9e9a94" stroke="none"/>
+
+                <!-- Resident Software ↔ Hardware -->
+                <line x1="450" y1="220" x2="450" y2="234" stroke="#d67556" stroke-width="1.5"/>
+                <polygon points="450,234 446,226 454,226" fill="#d67556" stroke="none"/>
+
+                <!-- Accolade ACR (plate-forme de configuration) -->
+                <line x1="520" y1="88" x2="530" y2="88" stroke="#d67556" stroke-width="1.5"/>
+                <line x1="530" y1="88" x2="530" y2="261" stroke="#d67556" stroke-width="1.5"/>
+                <line x1="530" y1="261" x2="520" y2="261" stroke="#d67556" stroke-width="1.5"/>
+                <line x1="530" y1="174" x2="545" y2="174" stroke="#d67556" stroke-width="1.5"/>
+                <text x="548" y="169" font-size="11" fill="#d67556" font-family="Inter,sans-serif" font-weight="600">ACR</text>
+
+                <!-- Labels interfaces latéraux -->
+                <text x="0" y="122" font-size="9" fill="#9e9a94" font-family="Inter,sans-serif"
+                      writing-mode="tb">Platform</text>
+                <text x="0" y="196" font-size="9" fill="#9e9a94" font-family="Inter,sans-serif"
+                      writing-mode="tb">Hardware</text>
+            </svg>
+            <figcaption>Fig. 1 — Pile logicielle du CPIOM. L'interface ARINC 653 (API) sépare les partitions applicatives de l'OS. L'interface COEX sépare l'OS des drivers. L'ACR englobe OS + Drivers (la partie configurable).</figcaption>
+        </div>
+
+        <div class="callout-info">
+            <strong>Interface COEX</strong> (<em>COre / EXecutive Software Interface</em>) — point de découplage
+            entre l'OS (Executive Software) et les pilotes hardware (Driver Software). Grâce à COEX,
+            l'Executive Software peut être porté sur différents boards matériels sans modifier les applications.
+            C'est l'équivalent d'une <em>Hardware Abstraction Layer</em> dans un OS classique.
+        </div>
+
+        <h3>Architecture matérielle</h3>
+
+        <p>
+            Le CPIOM se compose de deux boards physiques distinctes, communicant via un bus
+            <strong>USB interne</strong> (Intra LRM Communication) :
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>CPU Board</strong>
+                <span class="badge badge-blue">Calcul principal</span><br><br>
+                <ul>
+                    <li>Processeur <strong>CPU MPC755</strong> (PowerPC 32 bits)</li>
+                    <li>RAM, Flash, NVM (connectés via bus <strong>PCI</strong>)</li>
+                    <li><strong>Partitioning Control</strong> (MMU matérielle)</li>
+                    <li>Interface réseau <strong>AFDX</strong> (bus avionique haute vitesse)</li>
+                    <li>Ports DSI/DSO (entrées/sorties discrètes)</li>
+                </ul>
+            </div>
+            <div class="highlight-box">
+                <strong>IO_DSP Board</strong>
+                <span class="badge badge-green">I/O temps réel</span><br><br>
+                <ul>
+                    <li>DSP <strong>TMS320C33</strong> (Texas Instruments) + RAM interne</li>
+                    <li>Interface <strong>AUDIO</strong> (communications vocales)</li>
+                    <li>Flash, DSI/DSO, DGI (entrées discrètes génériques)</li>
+                    <li>Piloté par <strong>IO SW</strong>, séparé du Basic Software</li>
+                </ul>
+            </div>
+        </div>
+
+        <p>Le <strong>Basic Software</strong> est la couche système commune aux deux boards. Il regroupe :</p>
+        <ul>
+            <li><strong>A653 Operating System</strong> + Drivers + Boot — noyau ARINC 653 certifié</li>
+            <li><strong>UTIL</strong> : NVM Management, Module Management</li>
+            <li><strong>ResourceBITE</strong> — auto-test intégré des ressources hardware au démarrage</li>
+            <li><strong>SNMP-MIB</strong> — gestion réseau (maintenance et supervision)</li>
+            <li><strong>Dataload A615A</strong> — service de téléchargement conforme au standard A615A</li>
+            <li><strong>Instrumentation</strong> — monitoring des performances et collecte des métriques</li>
+        </ul>
+
+        <h3>L'ACR : plateforme générique certifiable</h3>
+
+        <div class="highlight-box">
+            <strong>ACR</strong> — <em>Avionics Computing Resource</em> (standard DO255) : plateforme embarquée
+            générique fournissant un environnement d'exécution standardisé, indépendant des applications hébergées.
+            <br><br>
+            <em>"Un ACR correct est vu comme une ressource standardisée et ré-utilisable pour les applications avioniques."</em>
+        </div>
+
+        <p>
+            L'ACR apporte trois bénéfices fondamentaux qui distinguent l'IMA de l'architecture fédérée :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Indépendance hardware">
+                <p>
+                    Les applications sont développées contre l'<strong>API ARINC 653</strong>
+                    — elles ignorent le hardware sous-jacent. Un changement de board
+                    (ex. : nouveau processeur plus rapide) ne nécessite pas de modifier l'applicatif.
+                </p>
+            </div>
+            <div class="compare-item good" data-label="Ségrégation multi-DAL">
+                <p>
+                    Des applications de <strong>niveaux DAL différents</strong>
+                    (ex. DAL-A pour le contrôle de vol, DAL-D pour l'info passagers)
+                    cohabitent sur le même calculateur, certifiées indépendamment.
+                </p>
+            </div>
+            <div class="compare-item neutral" data-label="Configurabilité">
+                <p>
+                    L'ACR est configurable par <strong>tables statiques</strong> :
+                    applications hébergées, catégories d'avions (A318/A320/A380…).
+                    La même plateforme physique peut équiper toute la famille Airbus.
+                </p>
+            </div>
+        </div>
+
+        <p>Les services fournis par l'ACR aux applications (définis par DO255) :</p>
+
+        <ul class="steps">
+            <li><strong>API standardisée ARINC 653</strong> — interface commune à tous les calculateurs IMA, indépendante du hardware</li>
+            <li><strong>Isolation et protection des applications</strong> — chaque application est confinée dans sa partition</li>
+            <li><strong>Détection des violations de partition</strong> — toute tentative est bloquée et journalisée</li>
+            <li><strong>Communication avec le reste de l'avion</strong> — via AFDX, ARINC 429, ou autres bus</li>
+            <li><strong>Ressources d'exécution garanties</strong> — CPU, mémoire, I/O alloués contractuellement</li>
+            <li><strong>Téléchargement</strong> — mise à jour du logiciel en service via DLCS</li>
+            <li><strong>Monitoring</strong> — surveillance permanente de l'état de fonctionnement</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Le principe API de l'ACR (DO255) :</strong> L'API expose 7 domaines de services :
+            management des partitions · management des applications (dans une partition) ·
+            management du temps · management de la mémoire · management des communications ·
+            monitoring · point de téléchargement.
+        </div>
+
+        <h3>Partitionnement : isolation temporelle et spatiale</h3>
+
+        <p>
+            Le mécanisme de partitionnement est le cœur de l'ACR. Il garantit une double isolation
+            — <em>spatiale</em> (mémoire) et <em>temporelle</em> (CPU) — entre toutes les partitions.
+        </p>
+
+        <h4>Isolation temporelle — partage statique du temps</h4>
+
+        <p>
+            Le processeur est découpé en <strong>tranches de temps fixes</strong> (<em>time slots</em>),
+            définies une fois pour toutes à la conception du système :
+        </p>
+
+        <ul>
+            <li>Chaque partition reçoit son <strong>segment périodique d'exécution</strong> garanti</li>
+            <li><strong>Pas de notion de priorité ni de préemption</strong> entre partitions — seul le timer change le contexte</li>
+            <li>Si une partition n'utilise pas son créneau, le temps restant est <strong>perdu</strong> (jamais redistribué)</li>
+            <li>Tout <strong>dépassement de créneau est une violation temporelle</strong>, immédiatement sanctionnée</li>
+        </ul>
+
+        <div class="figure-box">
+            <svg viewBox="0 0 560 120" width="560" height="120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Légende -->
+                <rect x="10" y="6" width="14" height="12" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <text x="28" y="17" font-size="10" fill="#f5f3f0" font-family="Inter,sans-serif">Part. 1</text>
+                <rect x="80" y="6" width="14" height="12" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <text x="98" y="17" font-size="10" fill="#f5f3f0" font-family="Inter,sans-serif">Part. 2</text>
+                <rect x="150" y="6" width="14" height="12" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <text x="168" y="17" font-size="10" fill="#f5f3f0" font-family="Inter,sans-serif">Part. 3</text>
+
+                <!-- Timeline normale -->
+                <text x="10" y="48" font-size="10" fill="#9e9a94" font-family="Inter,sans-serif">Normal :</text>
+                <rect x="65" y="34" width="32" height="22" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <rect x="97" y="34" width="52" height="22" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <rect x="149" y="34" width="28" height="22" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <rect x="177" y="34" width="32" height="22" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <rect x="209" y="34" width="52" height="22" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <rect x="261" y="34" width="28" height="22" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <rect x="289" y="34" width="32" height="22" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <rect x="321" y="34" width="52" height="22" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <rect x="373" y="34" width="28" height="22" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <line x1="65" y1="60" x2="420" y2="60" stroke="#9e9a94" stroke-width="1.5"/>
+                <polygon points="420,60 413,56 413,64" fill="#9e9a94" stroke="none"/>
+                <text x="424" y="64" font-size="10" fill="#9e9a94" font-family="Inter,sans-serif">t</text>
+
+                <!-- Timeline avec violation -->
+                <text x="10" y="100" font-size="10" fill="#9e9a94" font-family="Inter,sans-serif">Violation :</text>
+                <rect x="65" y="82" width="28" height="22" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <rect x="93" y="82" width="52" height="22" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <!-- Éclair violation -->
+                <polygon points="128,77 123,68 129,68 124,60 133,70 127,70" fill="#e53e3e" stroke="none"/>
+                <rect x="145" y="82" width="20" height="22" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <rect x="165" y="82" width="32" height="22" rx="2" fill="rgba(214,117,86,0.85)" stroke="none"/>
+                <rect x="197" y="82" width="52" height="22" rx="2" fill="rgba(214,117,86,0.45)" stroke="none"/>
+                <rect x="249" y="82" width="28" height="22" rx="2" fill="rgba(158,154,148,0.65)" stroke="none"/>
+                <line x1="65" y1="108" x2="420" y2="108" stroke="#9e9a94" stroke-width="1.5"/>
+                <polygon points="420,108 413,104 413,112" fill="#9e9a94" stroke="none"/>
+                <text x="424" y="112" font-size="10" fill="#9e9a94" font-family="Inter,sans-serif">t</text>
+            </svg>
+            <figcaption>Fig. 2 — Ordonnancement statique des partitions. En cas de violation temporelle (éclair rouge), la Partition 2 perd son créneau mais les autres ne sont pas affectées.</figcaption>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Attention — le temps non utilisé est perdu :</strong> Une partition qui termine
+            son traitement avant la fin de son créneau ne "rend" pas le temps restant.
+            Ce comportement est <em>intentionnel</em> : il garantit le déterminisme.
+            Aucune partition ne peut accaparer les ressources d'une autre, même si celle-ci est inactive.
+        </div>
+
+        <h4>Isolation spatiale — partage statique de la mémoire</h4>
+
+        <p>
+            La mémoire est partitionnée une fois pour toutes lors de la configuration système :
+        </p>
+
+        <ul>
+            <li>Chaque partition dispose d'une <strong>zone mémoire exclusive</strong> définie dans une table d'allocation statique</li>
+            <li>La <strong>MMU</strong> (<em>Memory Management Unit</em>) intercepte chaque accès mémoire et vérifie qu'il appartient à la zone autorisée pour la partition courante</li>
+            <li>Tout débordement (<em>buffer overflow</em>) est <strong>physiquement impossible</strong> — la MMU bloque l'accès avant qu'il n'atteigne la mémoire cible</li>
+            <li>La table d'allocation est statique : elle ne change pas en cours d'exécution</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie — le vigile de la MMU :</strong> Avant qu'une instruction puisse lire ou écrire
+            à une adresse mémoire, la MMU consulte la table d'allocation :
+            "cette adresse appartient-elle bien à la partition courante ?"
+            Si non, l'accès est refusé immédiatement et l'incident est signalé — comme un vigile
+            qui refuse l'entrée d'un appartement à quelqu'un dont la clé ne correspond pas.
+        </div>
+
+        <h4>Mécanismes anti-violation</h4>
+
+        <div class="callout-danger">
+            <strong>Principe fondamental (DO178B) :</strong>
+            <em>"Le partitionnement fournit une isolation entre des fonctions indépendantes afin
+            d'isoler les fautes et de diminuer les coûts de certification."</em><br><br>
+            Une erreur propagée (qui se diffuse à d'autres fonctions) est <strong>pire que de perdre
+            la fonction elle-même</strong>. La ségrégation stricte empêche cette propagation.
+        </div>
+
+        <p>
+            L'ACR garantit que toute tentative de violation — temporelle ou spatiale — est traitée
+            sans impacter les autres partitions :
+        </p>
+
+        <ul class="steps">
+            <li><strong>Détection</strong> — interceptée matériellement (MMU pour l'espace, timer pour le temps)</li>
+            <li><strong>Blocage</strong> — l'accès illicite est immédiatement bloqué, sans exécution</li>
+            <li><strong>Report</strong> — l'incident est journalisé en NVM et remontable au monitoring</li>
+            <li><strong>Isolation</strong> — aucune conséquence sur les autres partitions actives</li>
+        </ul>
+
+        <h3>Le modèle APEX : partitions et applications</h3>
+
+        <div class="highlight-box">
+            <strong>APEX</strong> — <em>APplication EXecutive</em>, standardisé par ARINC 653 :
+            OS du CPIOM définissant un modèle à <strong>deux niveaux d'ordonnancement imbriqués</strong>.
+            Le niveau supérieur (partitions) est statique et certifiable formellement.
+            Le niveau inférieur (processus) est dynamique et flexible.
+        </div>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>Niveau système — partitions</strong>
+                <span class="badge badge-orange">Ordonnancement statique</span><br><br>
+                Un système = {partitions}. Chaque partition regroupe des fonctions avioniques.
+                L'ordonnancement des partitions par le CPM est <strong>figé à la conception</strong>
+                — pas de décision dynamique. La partition est l'unité de ségrégation spatiale ET temporelle.
+            </div>
+            <div class="highlight-box">
+                <strong>Niveau partition — applications</strong>
+                <span class="badge badge-blue">Ordonnancement dynamique</span><br><br>
+                Une partition = {applications/processus}. Au sein d'une partition,
+                les processus sont ordonnancés de façon <strong>dynamique et préemptive</strong> avec priorités.
+                Les défaillances d'un processus restent confinées dans la partition.
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Pourquoi deux niveaux d'ordonnancement ?</strong>
+            Le niveau supérieur (partitions) doit être certifiable — une table statique est
+            vérifiable formellement et son comportement est prouvable. Le niveau inférieur
+            (processus au sein d'une partition) peut être plus souple car toute défaillance
+            reste cloisonnée. Ce découplage est un compromis optimal entre
+            <em>rigueur de certification</em> et <em>flexibilité de développement applicatif</em>.
+        </div>
+
+        <p>Objectifs du management des applications (ARINC 653) :</p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Développement séparé">
+                <p>Conception, tests et vérification de chaque processus s'effectuent <strong>indépendamment</strong>. Un équipementier peut certifier son application sans connaître les autres.</p>
+            </div>
+            <div class="compare-item good" data-label="Cloisonnement des pannes">
+                <p>Un dysfonctionnement d'un processus reste <strong>confiné à sa partition</strong>. Il ne peut pas corrompre l'état d'une autre application ou partition.</p>
+            </div>
+            <div class="compare-item good" data-label="Évolutivité">
+                <p>L'ajout de nouvelles applications n'a <strong>aucune conséquence</strong> sur les applications déjà présentes. On peut certifier les nouvelles applications séparément.</p>
+            </div>
+        </div>
+
+        <h3>Services ACR détaillés</h3>
+
+        <h4>Management du temps</h4>
+
+        <p>
+            L'ACR gère l'exécution des partitions ET des processus (dans chaque partition) pour maintenir
+            un <strong>comportement déterministe</strong> à l'échelle de la plateforme entière.
+            La règle fondamentale : l'altération des paramètres temporels d'une application dans une partition
+            ne doit avoir <em>aucune conséquence</em> sur les autres partitions.
+        </p>
+
+        <dl class="key-value">
+            <dt>Niveau plateforme</dt>  <dd>Ordonnancement statique des partitions — périodes fixes, déterministes</dd>
+            <dt>Niveau partition</dt>   <dd>Ordonnancement dynamique préemptif des processus — priorités configurables</dd>
+            <dt>Isolation</dt>          <dd>Un bug de timing dans une partition n'affecte pas le scheduling des autres</dd>
+        </dl>
+
+        <h4>Management des communications</h4>
+
+        <p>
+            Les communications sont également allouées <strong>statiquement</strong> à la conception.
+            Chaque partition a son propre créneau d'accès réseau. L'application passe
+            par l'OS ARINC 653 qui dispatche vers le bus physique adéquat (AFDX, ARINC 429…) :
+        </p>
+
+        <div class="highlight-box">
+            <strong>Exemple d'appel APEX :</strong>
+            <code>Write_Sampling_Port(portId, data, length)</code><br>
+            L'application écrit dans un port logique. L'OS consulte la
+            <em>Table de Communications Statique</em> pour savoir sur quel bus physique router le message.
+            L'application ne connaît ni le bus, ni la topologie réseau.
+        </div>
+
+        <div class="callout-info">
+            <strong>Sampling vs Queuing ports (ARINC 653) :</strong>
+            Les <em>Sampling Ports</em> écrasent le dernier message (modèle "dernière valeur connue" —
+            utilisé pour des données continues comme cap, vitesse, altitude).
+            Les <em>Queuing Ports</em> maintiennent une file FIFO (utilisé pour des événements discrets
+            comme des commandes ou des alarmes).
+        </div>
+
+        <h4>Monitoring</h4>
+
+        <p>
+            L'ACR surveille en permanence l'état de toutes les partitions. Les rapports de monitoring
+            sont stockés en <strong>mémoire non volatile (NVM)</strong> pour extraction ultérieure
+            et contiennent :
+        </p>
+
+        <ul>
+            <li>Erreurs et exceptions relevées par les applications</li>
+            <li><strong>BIT status</strong> (Built-In Test Equipment) — résultats de l'auto-test au démarrage</li>
+            <li>Utilisation <em>maximale</em> des ressources (CPU, mémoire, communications) par partition</li>
+            <li>Tentatives de violation détectées et bloquées</li>
+            <li>Autres données de maintenance</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Pourquoi stocker en NVM ?</strong> En cas de panne ou de redémarrage, les données de
+            monitoring doivent être préservées pour permettre le diagnostic post-incident. La NVM garantit
+            la persistance même en cas de coupure d'alimentation complète.
+        </div>
+
+        <h4>Téléchargement</h4>
+
+        <p>
+            L'ACR fournit le service de téléchargement via le <strong>DLCS</strong>
+            (<em>Data Loading and Configuration System</em>), conforme au standard <strong>A615A</strong>.
+            Ce service permet la mise à jour du logiciel embarqué en service sans démontage du module.
+        </p>
+
+        <ul class="steps">
+            <li><strong>Réception et intégrité</strong> — vérification que les données téléchargées sont complètes et non corrompues</li>
+            <li><strong>Confirmation au DLCS</strong> — acquittement de bonne réception envoyé au Ground Support Equipment</li>
+            <li><strong>Identification des versions</strong> — enregistrement du Part Number et Software Version loaded pour traçabilité</li>
+        </ul>
+
+        <h3>Processus d'allocation et de certification</h3>
+
+        <h4>Processus d'allocation des ressources</h4>
+
+        <p>
+            Avant tout développement, les ressources de chaque application doivent être
+            déclarées et allouées <em>contractuellement</em>. Ce processus en trois temps
+            est garant du déterminisme global :
+        </p>
+
+        <ul class="steps">
+            <li><strong>Déclaration des besoins</strong> — chaque Application Provider déclare ses besoins en CPU, mémoire et bande passante communications</li>
+            <li><strong>Concertation et allocation</strong> — le Platform Integrator consolide les besoins, vérifie la faisabilité et alloue formellement les ressources</li>
+            <li><strong>Développement contraint</strong> — l'application est développée et testée dans le strict respect des ressources allouées (le dépassement en run-time déclenche une violation)</li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>Conséquence de l'allocation contractuelle :</strong> Une application qui dépasserait
+            ses ressources allouées à l'exécution est <em>détectée et sanctionnée</em> (violation).
+            Il n'y a pas de "tolérance" — les garanties sont enforced matériellement.
+            C'est le prix du déterminisme certifiable.
+        </div>
+
+        <h4>Indépendance des partitions et bénéfice DAL</h4>
+
+        <p>
+            Le partitionnement permet une avancée majeure pour la certification :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Développement séparé par DAL">
+                <p>Des systèmes avec des <strong>niveaux de DAL différents</strong> (DAL-A, DAL-C…)
+                peuvent être développés sur le même calculateur, chacun certifié indépendamment.
+                La modification d'une application n'affecte pas la certification des autres.</p>
+            </div>
+            <div class="compare-item good" data-label="Calculateurs configurables">
+                <p>Temps processeur, mémoire et communications réseau sont définis par
+                <strong>tables statiques configurables</strong>. La même plateforme physique
+                s'adapte à différentes configurations avion (A318, A320, A380…).</p>
+            </div>
+        </div>
+
+        <h4>Acteurs de la certification CPIOM</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Acteur</th>
+                        <th>Rôle</th>
+                        <th>Livrables clés</th>
+                        <th>Standard</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ACR Platform Provider</strong><br><em>(ex. Thales, Rockwell Collins)</em></td>
+                        <td>Fournit la plateforme CPIOM certifiée</td>
+                        <td>ACR Data Package, Qualification Data, fiches techniques</td>
+                        <td><span class="badge badge-orange">DO255</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Application Provider</strong><br><em>(équipementier avionique)</em></td>
+                        <td>Développe les applications hébergées</td>
+                        <td>Application Data, déclaration de besoins en ressources</td>
+                        <td><span class="badge badge-orange">DO178B</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Platform Integrator</strong></td>
+                        <td>Intègre ACR + applications sur la plateforme</td>
+                        <td>Tables d'allocation, configuration système</td>
+                        <td><span class="badge badge-blue">ED12</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Aircraft System Integrator</strong><br><em>(Airbus)</em></td>
+                        <td>Intègre dans l'avion, obtient la certification</td>
+                        <td>TC/STC Data → FAA / JAA</td>
+                        <td><span class="badge badge-green">TC/STC</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>
+            Les <strong>fiches techniques ACR</strong> livrées par le Platform Provider
+            (exemple CPIOM Airbus) couvrent :
+        </p>
+
+        <dl class="key-value">
+            <dt>Système architecture</dt>       <dd>Description globale de la plateforme et de ses interfaces</dd>
+            <dt>Hardware</dt>                   <dd>Spécifications CPU Board + IO_DSP Board</dd>
+            <dt>Fonctionnalités</dt>            <dd>Partitions, processeur, temps, mémoire, communications inter-partitions</dd>
+            <dt>Monitoring</dt>                 <dd>Réponse aux fautes, maintenance, BIT</dd>
+            <dt>Configuration</dt>              <dd>Tables statiques d'allocation des ressources</dd>
+            <dt>Validation &amp; Vérification</dt><dd>Preuve formelle du partitionnement, tests de qualification</dd>
+            <dt>Description des services</dt>   <dd>Spécification complète de l'interface ARINC 653</dd>
+        </dl>
+
+        <div class="tip-box">
+            <strong>Bénéfice clé du partitionnement pour la certification :</strong>
+            Grâce à la ségrégation, chaque Application Provider certifie son logiciel de façon
+            indépendante, sans connaître les autres applications hébergées sur le même CPIOM.
+            Le coût total de certification est réduit, car on n'est pas obligé de qualifier
+            l'ensemble de la plateforme au niveau DAL le plus strict hébergé.
+        </div>
+
+        <p class="source">LIAS / Ridouard F. — <em>IMA : Les modules CPIOM</em>, slides 82–108. Cours Systèmes Avioniques, PART2.</p>
+        <p class="source">ARINC 653 — <em>Avionics Application Software Standard Interface</em>. Airlines Electronic Engineering Committee.</p>
+        <p class="source">RTCA DO-255 / EUROCAE ED-124 — <em>Requirements for Avionics Computing Resource (ACR)</em>.</p>
+
+    </div>
+
+</body>
+</html>

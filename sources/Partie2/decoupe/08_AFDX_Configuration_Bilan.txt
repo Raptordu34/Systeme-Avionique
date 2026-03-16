@@ -1,0 +1,424 @@
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+180
+
+AFDX : Format des données
+• Message :
+•
+
+Dans une trame AFDX, le message est contenu dans la Payload. Celle-ci
+pouvant être fragmentée lorsque le message dépasse ses
+caractéristiques maximum.
+NS
+
+Mac
+IP
+UDP
+Payload (17 to 1471 octets)
+AFDX frame
+(physical
+layer)
+
+• Format des Données permet d’identifier :
+•
+•
+•
+•
+
+Données émises;
+La structure du message qui précise l’agencement des données utiles
+(ex: le 1er octet est l’identifiant et les octets suivants sont les données);
+Types de données (entier, booléen, flottant, etc.) admis
+et leurs encodages.
+
+181
+
+AFDX : Format des données
+• Format des données :
+• Dans le message, aucune information ne permet d’identifier les données,
+ni de définir leur format et leur type;
+• Ces informations sont stockées dans un fichier de configuration;
+Pas de décodage à faire à la volée.
+Perte de souplesse : si l’émetteur change son message, le récepteur
+devra aussi changer sa logique de réception des données.
+• Les formats de tous les messages AFDX sont enregistrés dans une BDD.
+
+182
+
+AFDX : Format des données
+• Format des données :
+Données envoyées dans un même
+message
+Datum 1
+(FS1)
+entier
+Datum 5
+(FS5)
+booléen
+
+Datum 2
+(FS2)
+réel/32 bits
+Datum 6
+(FS6)
+type propriétaire
+
+Datum 3
+(FS3)
+string
+Datum 7
+(FS7)
+
+Datum 4
+(FS4)
+réel/64 bits
+Datum 8
+(FS8)
+
+• Functionnal Status :
+• A chaque donnée est associée un statut fonctionnel (Functional Status)
+comme c’était le cas en Arinc 429;
+• Ce statut apporte une précision sur la validité fonctionnelle de la donnée.
+• Valeurs : « no data », « normal operation », « functional test », « no computed
+data ».
+183
+
+AFDX : Format des données
+
+184
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+185
+
+AFDX : Redondance
+
+• Problématique :
+• Le réseau AFDX repose essentiellement sur les
+commutateurs;
+• MTBF (Mean Time Between Failures) : 100000H
+
+• Perte d’un commutateur :
+• Pas de reconfiguration
+• Tous les messages (VL) passant par ce
+commutateur sont perdus.
+• Déterminisme? Sûreté de fonctionnement?
+
+• => Redondance de l’AFDX
+
+186
+
+AFDX : Redondance
+• But de la redondance :
+• DISPONIBILITE du réseau (pas
+de No Go)
+
+Réseau B
+Réseau A
+Par VL
+End System
+Tx
+
+Par VL
+End System
+Rx
+
+• Pour chaque VL, le E/S émet 2
+trames "identiques" sur les 2
+réseaux redondés
+• La fonction « Redundancy
+Management » (RM) du E/S :
+• Envoie des deux trames
+simultanées
+• Récupère la première trame
+et supprime la seconde
+
+UDP
+IP
+Redondancy management
+
+Integrity Checking
+
+Integrity Checking
+
+Couche
+couche
+MAC
+
+2 ports physiques
+
+Couche
+MAC
+187
+
+Plan
+
+Présentation de l’AFDX :
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+188
+
+AFDX : BITE réseau
+• MIB (Management Information Base) : Chaque
+composant du réseau (E/S et Switch) contient une base
+de données MIB.
+• Une MIB contient des variables décrivant l ’état du E/S, p.
+ex. :
+•
+•
+•
+•
+•
+
+état du composant (fault / healthy)
+état de ses ports
+Nombre d’erreurs sur la couche MAC
+Nombre d’erreurs sur la couche IP
+etc ...
+
+189
+
+AFDX : BITE réseau
+• NBF (Network BITE Function) : interroge et centralise
+régulièrement l ’ensemble des variables MIBs des composants
+réseau.
+• L ’interrogation est effectuée via le protocole standard SNMP
+(Simple Network Management Protocol) : protocole de question
+/ réponse.
+• La NBF « digère » l ’ensemble des réponses obtenues et envoie
+un rapport au CMS (Central Maintenance System).
+• L’opérateur de maintenance consulte les rapports du CMS pour
+diagnostiquer le réseau AFDX.
+
+190
+
+AFDX : BITE réseau
+• Principe de fonctionnement
+
+Rapports
+au CMS
+
+Ethernet :
+Monde
+ouvert
+
+AFDX
+
+MIB
+
+MIB
+ES
+
+ES
+
+SCI
+
+MIB
+
+MIB
+
+ES
+
+MIB
+
+MIB
+MIB
+
+ES
+
+ES
+
+NBF
+
+191
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+192
+
+Bilan de l’AFDX
+Augmenter le débit, c’est offrir de nouveaux services aux
+applications :
+• téléchargement en 15mn;
+• nouvelles fonctionnalités systèmes;
+• communiquer plus de données en moins de temps.
+
+Simplifier l’accès au réseau :
+• une seule carte d’interface AFDX dans un équipement;
+• câblage simplifié.
+
+Simplifier la maintenance :
+• Les composants (E/S, commutateurs);
+
+193
+
+Bilan de l’AFDX
+Simplifier toute évolution d’architecture
+• pas de manipulation physique (carte d’E/S; câblage) pour ajout/suppression
+d’un destinataire (téléchargement de configuration)
+• ajout/suppression d’abonné
+
+Plus de limitation (dimensionnement) dû au protocole. La longueur
+max dépend seulement de la propagation des signaux.
+Pas de collision : déterminisme
+Standard IEEE (très connu et non propriétaire) : coût d'utilisation
+réduits, technologie mûre (test, confiance), réutilisation des logiciels
+(développement et maintenance)
+Technologie la plus proche des standards COTS
+
+194
+
+Bilan de l’AFDX
+Liberté de choix du format des données
+Intégration des LRM : IOM (Input Output Module) et CPIOM (Core Processing
+Input Output Module)
+LRU
+Appli
+FM
+1 partition
+
+E/S
+
+LRM : CPIOM
+Appli
+FCDC
+
+Appli BITE
+Appli 615A
+
+Appli
+FWS
+
+partition 1
+
+partition 2
+
+partition 3
+
+(RAM ; temps CPU)
+
+(RAM ; temps CPU)
+
+(RAM ; temps CPU)
+
+E/S
+
+AFDX
+
+195
+
+Bilan de l’AFDX
+Ajout de nouveaux équipements (switchs) :
+• Poids augmenté;
+• Alimentation;
+• Ventilation de la baie.
+
+Occupation des baies avioniques pour n équipements
+supplémentaires.
+Nouvelles pannes à gérer, dédiées à ce nouveau système.
+Nouveau partage de responsabilité / partage de charge :
+• Nouvelles manières de travailler;
+• Nouvelle fonction: architecte réseau.
+
+Latence (temps de traversée réseau) plus importante que
+sur l’A429.
+196
+
+Bilan de l’AFDX
+
+•
+
+Problématiques liées à la certification :
+• Possibilité de perte de trames dans les files d’attente;
+Dimensionnement du réseau
+• Quelques chiffres… de l’A380 :
+• Tous les liens sont chargés entre 0 et 33%
+• MAIS seuls 10% des liens ont une charge supérieure à 20%
+• Pour plus de 50% des liens, cette charge ne dépasse pas…5%
+
+Recherches en cours… au LIAS
+
+197
+
+Bilan de l’AFDX
+Problématiques liées à la certification :
+Garantir des délais de bout-en-bout (traversée de l’AFDX) :
+
+Recherches en cours… au LIAS
+198
+
+

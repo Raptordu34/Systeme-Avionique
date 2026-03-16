@@ -1,0 +1,547 @@
+Les systèmes avioniques :
+IMA
+
+Ridouard Frédéric
+Bauer Henri
+
+Plan
+• Introduction
+• Généralités
+
+• Historique
+• Architectures
+• Évolution des besoins
+
+• Integrated Modular Avionics (IMA)
+• Définition
+• Modules
+• Réseau
+
+• Avionics Full DupleX switched ethernet (AFDX)
+• Définition
+• Composants
+• Autres propriétés
+
+56
+
+LIAS
+
+Ridouard F.
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+57
+
+IMA : nouvelle architecture
+• Integrated Modular Avionics
+• Concept issu des projets PAMELA et VICTORIA,
+• Utilisée par Airbus (A380, A400M,A350…)
+• Mais d’abord par Boeing (B777) et Dassault Aviation (Rafale)
+• Principe : Découpage du système avionique en plusieurs soussystèmes.
+• Partage des ressources d’exécution et de communication
+
+58
+
+IMA : nouvelle architecture
+• Integrated Modular Avionics
+• Concept :
+• Pas de développement de matériel spécifique pour un
+système;
+
+• Réseau :
+• Utilisation d’un réseau multiplexé avec un bon débit;
+
+• Système :
+• Calculateurs standardisés et non spécifiques;
+• Calculateurs configurés pour exécuter différentes
+applications;
+59
+
+IMA : nouvelle architecture
+• Principes généraux :
+• Systèmes avioniques déposés sur des baies
+• Fonctionnalités découpées en module :
+•
+
+Gateway, Calculateurs, générateurs…
+
+• Communications dans une baie par un bus backplane « fond de
+panier »
+• Définition d’OS pour la gestion des applications
+• Diminution du nombre de fournisseurs
+
+60
+
+IMA : nouvelle architecture
+• IMA Architecture
+LRM
+
+…
+
+(Low Bandwidth)
+
+…
+
+Entrées
+
+
+
+
+…
+
+
+
+
+(High Bandwidth)
+
+…
+
+Entrées
+
+Sorties
+
+(High Bandwidth)
+
+Sorties
+(Low Bandwidth)
+
+Ecrans
+
+61
+
+IMA : nouvelle architecture
+• Historique
+•Plusieurs modules
+standardisés
+•Fonctionnalités
+développées (inter-
+
+•Unique fournisseur de
+modules
+•Intégrations simplistes de
+fonctions
+•Bus « fond de panier »
+non standardisé
+•Rack sont cloisonnés
+
+•Plusieurs fournisseurs de
+modules
+•Fonctionnalités
+développées
+•Bus « fond de panier »
+A659
+•Rack partiellement
+décloisonnés
+
+•B777 Smiths Electronic
+Units
+•B777 Honeywell AIMS
+Cabinet
+•VFW 614 EFCS Cabinet
+
+•B777 Card Files
+
+•A380 Architecture
+
+•Honeywell EPIC
+
+•A400M Architecture
+
+•EFCS; NEVADA Cabinet
+
+•NEVADA Cabinet
+
+domaines)
+
+•Bus « fond de panier »
+standardisé
+•Architecture ouverte
+•APEX
+
+62
+
+IMA : nouvelle architecture
+• Historique
+
+63
+
+IMA : nouvelle architecture
+• Avantages :
+• Réduction des couts d’exploitation de l’avion :
+• Amélioration de la fiabilité et de la maintenance;
+• Réduction du poids de l’avion;
+• Libération de place dans les baies avioniques;
+
+• Ces objectifs sont atteints par :
+• Réduction des coûts récurrents et non-récurrents;
+• Réduction du nombre de composants différents;
+
+• Maintenance « en pratique » améliorée:
+• Installations plus simples;
+• Erreurs diagnostiquées rapidement;
+• Réduction du câblage et du nombre de connecteurs;
+
+=> Réduction des temps de réparation.
+64
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+65
+
+IMA : BOEING B777
+• Première implantation de l’IMA
+• Architecture :
+• Calculateurs partagés (CPM)
+• Bus multiplexés ARINC 629
+
+CPM1
+
+...
+
+CPMn
+
+GTW
+
+Etagère
+ARINC 629
+
+• Protocole d’accès au bus : CSMA-CA
+• Ecoute du support (s’il est libre après un certain temps)
+• Réservation (optionnelle) dont le rôle est de limiter le nombre de collision en s'assurant que le
+support est libre,
+• Transmission des données
+• Acquittement positif (ACK).
+
+• ordonnancement statique des fonctions sur les CPM et des messages sur les bus
+66
+
+IMA : BOEING B777
+• Caractéristiques générales :
+• Débit de 2 à 8 Mbits/s (paire torsadée)
+• Structure de la trame :
+
+• Un message est composé d’au plus 31 mots (word string)
+• Un mot est composé d’un label et jusqu’à 256 mots de données
+• Un Label se compose de :
+• Sync: 3 bits pour la synchronisation
+• Cid (Channel Identification): identifie l’émetteur quand il y a plusieurs équipements identiques
+(redondance)
+• P : Bit de parité
+
+• Deux protocoles incompatibles d’accès au bus :
+• Basic Protocol (BP) et Combined Protocol (CP)
+
+67
+
+IMA : BOEING B777
+• Basic Protocol (BP) :
+• TGi (Terminal Gap) : Temps d’attente du terminal « i » après la dernière activité sur le bus
+avant d’émettre;
+• TI (Transmit Interval) : Temps d’attente pour chaque terminal entre deux de ses
+transmissions consécutives;
+• SG (Synchronization Gap) : Utilisé pour synchroniser tous les terminaux au début de
+chaque nouveau cycle de communication;
+• Mode de transmission périodique pour des grands TI
+
+• Mode de transmission apériodique pour des petits TI
+
+68
+
+IMA : BOEING B777
+• Combined Protocol (CP) :
+• Envoi combiné de données périodiques et apériodiques
+• Level 1 (L1): Phase de transmissions periodiques
+• Level 2 (L2): Phase de transmission de petits (plus haute priorité) messages apériodiques
+• Level 3 (L3): Phase de transmission de longs (plus basse priorité) messages apériodiques
+• TI uniquement pour les messages périodiques
+=>CE (Concatenation event) permet de supprimer tous les TI non terminés
+• PSG (Periodic Synchronization Gap) : temps d’attente pour la synchronisation avant chaque nouveau
+cycle
+• ASG (Synchronization Gap) : Temps d’attente entre les phases
+• AT (Aperiodic Time-out) : Pour interrompre la diffusion des messages apériodiques et éviter un
+débordement du cycle.
+
+• Pour chaque cycle transmission de messages de level 1 et 2.
+• Les messages du level 3 peuvent être retardés
+
+69
+
+IMA : BOEING B777
+
+70
+
+IMA : BOEING B777
+
+Bus Fond de Panier
+
+APEX/COEX
+
+APEX/COEX
+
+Fonction 1
+
+Bus Fond de Panier
+
+APEX/COEX
+
+APEX/COEX
+
+Fonction 3
+
+Fonction 2
+
+Fonction 1
+Fonction 2
+LRM E/S
+
+Fonction 3
+
+LRM Coeur
+
+APEX/COEX
+
+Fonction 3
+
+APEX/COEX
+
+APEX/COEX
+
+Fonction 2
+
+Fonction 1
+
+Fonction 1
+
+Fonction 3
+
+LRM Coeur
+
+LRM E/S
+
+Fonction 1
+
+Fonction 3
+Fonction 1
+
+LRM Coeur
+
+APEX/COEX
+
+Fonction 1
+
+Fonction 1
+
+LRM Gateway
+
+LRM Gateway LRM Coeur
+
+Fonction 2
+
+Etagère 1
+
+Etagère 2
+
+Bus Avion
+Bus ARINC 429
+Equipement
+(Fonction 1)
+
+Equipement
+(Fonction 2)
+
+API
+
+API
+
+Fonction 1
+
+Fonction 3
+
+Bus ARINC 429
+LRU
+
+Equipement
+(Fonction 3)
+
+LRU
+
+71
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+72
+
+IMA : AIRBUS
+• Airbus IMA : Partage de ressources
+• Réseau avionique développé autour de l’AFDX
+• Modules :
+• CPIOM (i.e. Core Processing & Input / Output Modules) : 8 part
+number
+• IOM (Input/ Output Modules) : 1 part number
+
+73
+
+IMA : AIRBUS
+• Airbus IMA : Partage de ressources
+
+74
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Calculateurs
+
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+75
+
+IMA : AIRBUS
+• Airbus IMA : Partage de ressources
+• Applications (avec des niveaux de DAL différents)
+sont placées sur un même calculateur
+• Ségrégation
+• Applications indépendantes du hardware
+• Standardisation des API (Application Programming
+Interface)
+• Conséquences sur le développement des systèmes :
+• Nouvelles dépendances
+
+LIAS
+
+• Ce concept a été développé sur l’A380 pour la
+76
+gestion du cockpit, de l’énergie, de la cabine et de
+l’instrumentation
+Ridouard F.
+
+IMA : AIRBUS
+
+77
+
+IMA : AIRBUS
+
+• Airbus IMA : « Open IMA »
+• Standardisation de l’environnement logiciel
+• Indépendance des parties Hardware et Software:
+• Un soft développé une seule fois et utilisé sur plusieurs avions;
+• Réduction des besoins de certification;
+• Mise à jour des technologies facilité;
+
+• ARINC 653 : Système d’exploitation
+•
+•
+•
+•
+
+Indépendance avec la partie matérielle;
+Services de contrôle des processus;
+Pas d’accès direct aux entrées/sorties;
+Monitoring interne;
+78
+
+IMA : AIRBUS
+• Airbus IMA : « Open IMA »
+• Limiter les besoins de certification :
+•
+•
+•
+•
+
+Mise en commun des besoins sur une flotte hétérogènes d’avions;
+Mises à jour fréquentes;
+Facilité l’évolution du système;
+Faciliter la portabilité des systèmes;
+
+• Re-use efficace :
+
+79
+
+ARCHITECTURE
+Ethernet
+
+Environnement
+IHM
+Ethernet
+
+429
+
+Environnement
+LRU
+429
+
+GWM
+
+IOM
+
+CPM
+
+CPM
+
+IOM
+
+GWM
+
+Etagère
+
+Plate-forme « cockpit »
+
+SWITCH
+
+SWITCH
+Réseau AFDX
+
+Environnement AFDX
+plate-forme « cabine »
+plate-forme « utility »
+80
+
+ARCHITECTURE
+
+81
+
+

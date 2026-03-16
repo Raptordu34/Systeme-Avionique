@@ -1,0 +1,383 @@
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+82
+
+IMA : AIRBUS
+
+• Airbus IMA : Partage de ressources
+• Applications sont regroupées en partitions
+• Les partitions sont concurrentes pour l’accès
+aux ressources :
+• Partage des ressources d’exécution
+• Partage des ressources de communication
+
+83
+
+LIAS
+
+Ridouard F.
+
+CPIOM
+
+84
+
+Hardware
+
+85
+
+CPIOM
+
+ACR
+
+
+86
+
+CPIOM
+
+• Avionics Computing Resource (ACR)
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Plateforme embarquée générique
+Capable d’héberger plusieurs applications;
+Fournir des garanties de mémoire
+Fournir des garanties d’exécution
+Routage vers l’extérieur
+Fournit un standard et une indépendance des applications vis-à-vis du
+Hardware
+Configurable (en termes d’applications)
+Configurable (en termes de catégories d’avions)
+Fournir une ségrégation logiciel entre applications;
+Fournir des moyens de détection de la violation de la séparation;
+87
+
+CPIOM
+
+• Avionics Computing Resource (ACR) : DO255
+• Services fournis aux applications :
+• Les services d’une API;
+• Isolation et protection des applications;
+• Détection et évitement de toute tentative de violation de partition;
+• Moyens pour communiquer avec le reste de l’avion;
+• Ressources d’exécution;
+• Possibilité de téléchargement;
+• Monitoring;
+=> Un ACR correct est vu comme une ressource standardisée et ré-utilisable pour
+les applications avioniques
+88
+
+CPIOM
+
+• Avionics Computing Resource (ACR) : DO255
+• Principe (API) :
+•
+•
+•
+•
+•
+•
+•
+
+Management des partitions;
+Management des applications (dans une partition);
+Management du temps;
+Management de la mémoire;
+Management des communications;
+Monitoring;
+Point de téléchargement;
+
+89
+
+ACR
+
+• Management des partitions :
+• Ensemble de service à la gestion des partitions;
+• Structurer des softwares robustes sur une plateforme;
+
+90
+
+ACR
+• Management des partitions :
+• Partage statique du temps :
+• Chaque partition à son segment périodique d’exécution;
+• Pas de notion de priorité ni de préemption;
+• Si une partition n’utilise pas son temps d’exécution, il est perdu;
+• Dépassements sont interdits.
+Partition1
+
+Partition 2
+
+Partition 3
+
+…
+…
+
+…
+
+…
+
+…
+91
+
+ACR
+• Management des partitions :
+• Partage statique de la mémoire :
+•
+•
+•
+•
+
+Chaque partition a une zone mémoire allouée différente;
+Table d’allocation statique;
+Chaque partition accède à un emplacement mémoire réservé;
+Débordement de mémoire impossible MMU (Memory Management Unit).
+
+Partition1
+
+MMU
+Table d’allocation
+
+Mémoire
+92
+
+ACR
+
+• Management des partitions :
+• Mécanismes pour empêcher les violation temporelles et
+spatiales;
+• Chaque tentative doit être détectée, bloquée et reportée;
+• Chaque tentative ne doit avoir aucune conséquence sur les
+autres partitions.
+
+93
+
+CPIOM
+
+94
+
+ACR
+• Partitions/Applications :
+• « Le partitionnement fournit une isolation entre des fonctions
+indépendantes afin d’isoler les fautes et de diminuer les coûts de
+certification » (DO178B)
+• Pour les besoins de certification, il faut garantir que la combinaison
+de fautes amenant à une situation catastrophique soient
+indépendantes
+• Remarques :
+• Une erreur ou un comportement inattendu sont souvent pire que de perdre
+une fonction;
+• Les conséquences d’une erreur propagée sont pire que de perdre une
+fonction;
+
+95
+
+ACR
+
+• Partitions/Applications :
+• « Le partitionnement fournit une isolation entre des fonctions
+indépendantes afin d’isoler les fautes et de diminuer les coûts de
+certification » (DO178B)
+• L’exécutif (APEX) :
+• Un système = {partitions}
+• une partition regroupe des fonctions avioniques
+• Ordonnancement des partitions / CPM est statique
+• partition = unité de ségrégation spatiale et temporelle
+
+• Une partition = {Applications}
+• Ordonnancement des processus / partition est dynamique (préemptif)
+
+96
+
+ACR
+
+• Management des applications :
+•
+•
+•
+•
+
+Fournir aux partitions, les moyens de gérer un ensemble d’applications;
+Une partition peut contenir une ou plusieurs applications (ou processus);
+Priorités;
+Objectifs :
+• La conception, le développement et les tests et la vérification doivent pouvoir
+s’effectuer séparément;
+• Les dysfonctionnements d’un processus restent cloisonnés;
+• L’ajout de nouvelles applications ne doivent pas avoir de conséquences pour
+celles déjà présentes (évolutivité)
+
+97
+
+CPIOM
+• Partitionnement :
+
+98
+
+ACR
+
+• Management du temps:
+•
+•
+•
+•
+
+Gérer l’exécution des partitions et des processus (dans chaque partition);
+Maintenir un comportement déterministe (au niveau de la plateforme);
+Gestion de l’ordonnancement des partitions (et des applications);
+L’altération des paramètres temporels ou de l’ordonnancement d’une
+application au sein d’une partition ne doit pas avoir de conséquence sur le
+reste de la plateforme (partitions);
+
+99
+
+ACR
+• Management des communications :
+• Partage statique des communications :
+• Chaque partition à son temps d’accès au réseau propre;
+• Temps de communication partagé (ARINC 429);
+• Requêtes à l’OS
+Application 1
+
+Application 2
+
+Write_Sampling_Port(XXX, YYY)
+
+Table de
+communications
+statique
+
+ARINC 653 : Système d’exploitation
+
+…
+
+AFDX
+
+ARINC
+429
+100
+
+ACR
+
+• Monitoring :
+• Fournir les services pour monitorer les partitions et les applications
+(surveiller leur état de fonctionnement);
+• Etre en capacité de recevoir les informations des applications;
+• Rapports contenant :
+• Erreurs relevées par les applications;
+• BIT statuts
+• Utilisation maximale des ressources (processeur, mémoire,
+communications) par chaque partition;
+• Tentative de violation;
+• Autres données;
+• Stockage du rapport dans une mémoire non volatile et possibilité
+d’extraction;
+101
+
+ACR
+
+• Téléchargement :
+• Fournir les services de téléchargement au niveau software et plateforme;
+• S’assurer que :
+• Les données sont téléchargées;
+• Envoyer une confirmation au service de téléchargement (DLCS);
+• Fournir une identification des versions
+
+102
+
+CPIOM
+• Partitionnement (résumé) :
+• Indépendance des partitions
+• Des systèmes avec des niveaux de DAL différents peuvent être développés sur
+un même calculateur;
+• Les systèmes sont développés et testés séparément;
+• La modifications sur une application n’affectent pas les autres;
+
+• Calculateurs configurables
+• Temps processeur, mémoire et communications réseau;
+• Tables statiques configurables et modifiables
+
+103
+
+CPIOM
+• Processus d’allocation :
+• Déclaration au préalable des besoins en ressources (processeur,
+mémoire et communications) des applications;
+• Concertation et allocation des ressources à chaque application;
+• Développement des applications par rapport à ces ressources allouées.
+
+104
+
+CPIOM
+• Processus de certification :
+• Domaine application :
+• Compatible au standard DO178B…
+• Déclaration besoins (processeur, mémoire, entrée/sortie…)
+• Domaine ACR
+• Compatible au standard DO178B…
+• Fiches techniques:
+• Interface Application spécification;
+• ACR caractéristiques :
+• Fonctions et opérations;
+• Paramètres;
+• Initialisation au démarrage et les cas d’interruption;
+• environnement
+105
+
+CPIOM
+
+Qualification Data
+
+106
+
+CPIOM
+• Exemples de fiche technique :
+• Système architecture;
+• Hardware;
+• Fonctionnalités :
+•
+•
+•
+•
+•
+
+Management des partitions;
+Management du processeur;
+Management du temps;
+Management de la mémoire;
+Communication inter-partitions
+
+• Monitoring :
+• Réponse à une faute;
+• Maintenance;
+
+• Configuration;
+• Validation & Verification;
+• Description des services;
+
+107
+
+CPIOM (Etude de cas)
+
+108
+
+

@@ -1,0 +1,1230 @@
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+152
+
+AFDX : End System (E/S)
+• Abonnés connectés à l’AFDX via les E/S :
+
+• End System (E/S):
+• Interface dans le calculateur permettant au système de se
+connecter au réseau AFDX
+• Dialoguer avec les autres systèmes par le réseau AFDX
+
+Système
+Partition
+
+• LRU (Line Replaceable Unit),
+• CPIOM (Core Processing Input-Output Module),
+• IOM (Input-Output Module).
+
+E/S
+UDP
+IP
+MAC
+
+153
+
+AFDX : End System (E/S)
+• Connecteurs des équipements AFDX (ARINC
+600) :
+•
+•
+•
+•
+
+dimensions des calculateurs
+alimentation électrique
+ventilation
+connecteurs (dimensions, …)
+
+154
+
+AFDX : End System (E/S)
+• End/System :
+• Transmettre sur le réseau les messages applicatifs en leur rajoutant les en-têtes
+réseaux nécessaires à son bon acheminement vers un ou plusieurs systèmes
+destinataires.
+• Reçoit les trames en provenance des 2 réseaux redondés et en
+• Extrait les messages pour les mettre à disposition de l’application.
+• composé d’une partie hardware et d’une pile TCP/IP Ethernet (soft et/ou hard
+codée)
+• Reçoit des applications, les message à l’E/S via une boîte aux lettres (port AFDX).
+L’application n’a aucune visibilité sur les couches de l’E/S
+• Configurationtéléchargeable par le protocole ARINC 615A
+
+155
+
+AFDX : End System (E/S)
+• End System en émission
+
+Traffic
+shaping
+
+VL 1
+
+Traffic
+shaping
+
+VL 2
+
+VL 3
+Traffic
+shaping
+
+Appli 2
+(partition 2)
+
+Eth A
+Duplication
+
+(partition 1)
+
+VL Scheduler (multiplexeur)
+
+Appli 1
+
+Eth B
+
+UDP IP MAC
+PortsAFDX
+
+IP fragmentation
+
+Sub-VL
+
+Traffic régulé
+(bag)
+156
+
+AFDX : End System (E/S)
+• End System en réception
+
+Appli 1
+
+filtrage
+
+VL1
+
+filtrage
+
+VL2
+
+filtrage
+
+VL3
+
+filtrage
+
+VL4
+
+filtrage
+
+VL5
+
+Appli 3
+
+(Redundancy Management
+Algorythm
+
+(partition 2)
+
+RMA
+
+Appli 2
+
+filtering
+
+(partition 1)
+
+Integrity
+Checking
+
+Eth A
+
+Integrity
+Checking
+
+Eth B
+
+(partition 3)
+
+UDP
+PortsAFDX
+
+IP
+
+IP filtering +
+reassembly
+
+MAC
+157
+
+AFDX : End System (E/S)
+•
+
+A l’émission un VL peut être vu comme une file d’attente de type FIFO.
+• Chaque VL dispose d’un mécanisme “Traffic Shaping” qui est paramétré avec le
+BAG du VL.
+• Le Traffic Shaping extrait les trames à la vitesse d’1 trame par BAG maximum.
+Application
+
+Port AFDX
+
+VL
+FIFO
+
+3
+2
+1
+Other
+VL
+
+Traffic
+Shaping
+
+BAG
+
+VL scheduler
+
+Eth. Tx queue
+
+1
+Ethernet Emitter
+
+E/S
+
+1
+
+2
+BAG
+
+3
+BAG
+
+en sortie du E/S
+
+158
+
+AFDX : END SYSTEM (E/S)
+
+• Multiplexage de plusieurs VL dans un même canal physique
+• Un E/S est configuré pour émettre et recevoir plusieurs VLs.
+
+159
+
+AFDX : END SYSTEM (E/S)
+• Multiplexage de plusieurs VL dans un même canal physique
+• Un E/S est configuré pour émettre et recevoir plusieurs VLs.
+Appli
+A
+
+E/S
+1 partition
+Tx VLs
+
+Rx VLs
+
+• En émission l’E/S multiplexe les Tx VLs d’ou le phénomène du jitter.
+VL1, BAG1, Jitter = 0
+VL2, BAG2, Jitter = 0
+VL3, BAG3, Jitter = 0
+
+MUX
+E/S
+
+BAG
+
+BAG
++
+jitter
+
+Flot unique multiplexé
+Jitter non nuls
+160
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+161
+
+AFDX : Les commutateurs
+• Switches (commutateurs)
+Port 1 vers ports 9 et 13
+1
+2
+3
+4
+5
+6
+7
+
+8
+9
+10
+11
+12
+13
+14
+
+Port 10 vers ports 2, 5, 6
+
+• Redirection des trames AFDX (Ethernets) via des tables de
+commutation définies par configuration.
+• Contrôles sur les trames
+162
+
+AFDX : Les commutateurs
+• Rôle principal :
+• Aiguiller (par commutation) les VL d’un port de réception vers un ou
+plusieurs ports d’émission, à l’aide d ’une table de commutation
+Application B
+partition 2
+
+Application A
+
+partition 1
+
+10.10.1.2
+224.224.1.1
+
+VL 1 : A -> B, C, E
+VL 2 : A -> D
+
+1
+2
+3
+4
+5
+6
+7
+
+10.10.1.1
+
+E/S
+
+1
+2
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2 E/S
+
+Appli C
+
+Appli D Appli E
+
+partition 11
+
+partition 12
+
+10.10.1.11
+224.224.1.1
+
+10.10.1.12
+224.224.1.1
+
+1
+2
+
+E/S
+
+VL2
+VL1
+Port de
+
+VL Id
+
+Port d’émission
+
+réception
+7
+
+1
+
+12
+
+7
+
+1
+
+14
+
+7
+
+2
+
+14
+
+163
+
+AFDX : Les commutateurs
+• Autres fonctions :
+• "Traffic policing": par VL, algorithme de contrôle du respect de la bande
+passante.
+• "Frame filtering": par VL, algorithme de contrôle du respect des tailles de
+trame.
+• Vérification de l’intégrité de la trame
+• L’ensemble des VL traversant un switch, ainsi que leurs caractéristiques,
+sont inclus comme paramètres dans la configuration du switch.
+
+• Remarque :
+• Le switch est aussi un abonné classique. Il contient donc un E/S, par lequel il
+peut entre autre être téléchargé.
+
+Le switch est un élément central de l’AFDX
+Il est au centre du déterminisme du réseau
+
+164
+
+AFDX : Les commutateurs
+• Schéma du commutateur :
+
+165
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+166
+
+AFDX : L’adressage
+Appli
+B
+Appli
+A
+
+1 partition
+1
+
+1
+2
+3
+4
+5
+6
+7
+
+1 partition
+E/S
+
+1
+2
+
+8
+9
+10
+11
+12
+13
+14
+
+• Les communications avioniques sont basées sur
+des VL :
+
+E/S
+2
+Appli
+C
+
+Appli D Appli E
+
+partition 1
+
+partition 2
+
+(RAM ; temps CPU)
+
+(RAM ; temps CPU)
+
+1
+2
+
+E/S
+
+• un émetteur
+• un ou plusieurs destinataires
+Transmission
+d’une Nouvelle
+trame arrive
+
+Début de la
+trame
+
+167
+
+AFDX : L’adressage
+
+• MAC Header :
+• Identification des interfaces Ethernet des destinataires
+• Identifiant du VL
+• Identification de l’interface Ethernet de la source
+168
+
+AFDX : L’adressage
+
+• IP Header :
+• Identification des partitions destinataires (à l’intérieur des calculateurs)
+• Identification de la partition source
+
+169
+
+AFDX : L’adressage
+
+• UDP Header :
+• Identification des applications destinataires (à l’intérieur des partitions)
+• Identification de l’application source
+
+170
+
+AFDX : L’adressage
+
+• Autres champs :
+• SN : Détection des pertes de trame/ Transmissions répétées d’une
+même trame;
+• FCS (Frame Check Sequence) ou CRC (Cyclic Redundancy Check) :
+détecte les erreurs de transmission.
+171
+
+AFDX : L’adressage
+
+172
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+173
+
+AFDX : Configuration
+Appli B
+Appli A
+
+Partition 1
+E/S
+
+1
+2
+
+Conf E/S
+• Coms Tx
+• Coms Rx
+
+Partition 1
+1
+2
+3
+4
+5
+6
+7
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2
+
+E/S
+
+Appli C
+Partition 1
+1
+2
+
+Appli D Appli E
+
+partition 2
+
+E/S
+
+• Table de configuration d’un E/S :
+
+• Identification de l’ensemble des communications de toutes les
+applications qui y résident;
+• Tx : Communications sortantes d’une application hébergée vers une
+ou plusieurs applications;
+• Rx : Communications entrantes d’une application hébergée depuis
+une autre application.
+
+174
+
+AFDX : Configuration
+Appli B
+
+Conf SW
+
+Appli A
+
+Partition 1
+
+Partition 1
+
+E/S
+
+1
+2
+
+1
+2
+3
+4
+5
+6
+7
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2
+
+E/S
+
+Appli C
+
+Appli D Appli E
+
+Partition 1
+
+partition 2
+
+1
+2
+
+E/S
+
+• Table de configuration d’un switch :
+
+• Identifie l’ensemble des communications traversant ce switch (configuration
+statique)
+• Pour chaque communication :
+• Identifie les caractéristiques des communications, afin de vérifier et contrôler qu’elles
+sont bien respectées.
+• ex : rejet de trame si bande passante non respectée
+175
+
+AFDX : Configuration
+Appli B
+Appli A
+
+Partition 1
+E/S
+
+1
+2
+
+Conf E/S
+• Coms Tx
+• Coms Rx
+
+Partition 1
+
+Conf SW
+1
+2
+3
+4
+5
+6
+7
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2
+
+E/S
+Appli D Appli E
+
+Appli C
+Partition 1
+1
+2
+
+partition 2
+
+E/S
+
+• Configuration du réseau :
+• L’ensemble des tables de configuration des E/S et des switches;
+• Identifie l’ensemble des chemins des communications à travers le
+réseau.
+176
+
+AFDX : Configuration
+Appli B
+partition 2
+
+Appli A
+partition 1
+10.10.1.1
+
+⧫ A -> B, C, E
+⧫ A -> D
+
+1
+
+E/S1 2
+
+1
+2
+3
+4
+5
+6
+7
+
+10.10.1.2
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2
+
+E/S2
+
+Appli C
+
+Appli D Appli E
+
+partition 11
+
+partition 12
+10.10.1.12
+
+10.10.1.11
+1
+2
+
+E/S3
+
+• Tables de configuration de l’E/S 1 :
+• Table des VLs
+
+VL Id
+
+Tx/Rx
+
+BAG
+
+SMAX
+
+1
+
+Tx
+
+16
+
+800
+
+2
+
+Tx
+
+64
+
+700
+
+• Table des ports AFDX com Tx
+Port
+Id
+
+VL
+Id
+
+MAC
+Dest
+
+IP Dest
+
+UDP dest
+
+IP src
+
+UDP src
+
+Frag
+
+Q/S
+
+1000
+
+1
+
+E/S2
+
+10.10.1.2
+
+1020
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+1
+
+E/S3
+
+10.10.1.11
+
+1030
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+1
+
+E/S3
+
+10.10.1.12
+
+1040
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+2
+
+E/S3
+
+10.10.1.12
+
+1010
+
+10.10.1.1
+
+1010
+
+Y
+
+177
+
+Q
+
+AFDX : Configuration
+Appli B
+partition 2
+
+Appli A
+partition 1
+10.10.1.1
+
+⧫ A -> B, C, E
+⧫ A -> D
+
+1
+2
+3
+4
+5
+6
+7
+
+1
+
+E/S1 2
+
+8
+9
+10
+11
+12
+13
+14
+
+10.10.1.2
+1
+2
+
+E/S2
+
+Appli C
+
+Appli D Appli E
+
+partition 11
+
+partition 12
+10.10.1.12
+
+10.10.1.11
+1
+2
+
+E/S3
+
+• Tables de configuration de l’E/S 2 :
+• Table des VLs
+
+VL Id
+
+Tx/Rx
+
+BAG
+
+SMAX
+
+1
+
+Rx
+
+16
+
+800
+
+• Table des ports AFDX com Tx
+VL
+Id
+
+IP Dest
+
+UDP
+dest
+
+MAC src
+
+MAC src
+
+UDP
+src
+
+Frag
+
+Q/S
+
+1
+
+10.10.1.2
+
+1020
+
+E/S1
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+178
+
+LIAS
+
+Ridouard F.
+
+AFDX : Configuration
+Appli B
+partition 2
+
+Appli A
+partition 1
+10.10.1.1
+
+⧫ A -> B, C, E
+⧫ A -> D
+
+1
+
+E/S1 2
+
+1
+2
+3
+4
+5
+6
+7
+
+10.10.1.2
+
+8
+9
+10
+11
+12
+13
+14
+
+1
+2
+
+E/S2
+
+Appli C
+
+Appli D Appli E
+
+partition 11
+
+partition 12
+10.10.1.12
+
+10.10.1.11
+1
+2
+
+E/S3
+
+• Tables de configuration de l’E/S 3 :
+• Table des VLs
+
+VL Id
+
+Tx/Rx
+
+BAG
+
+SMAX
+
+1
+
+Tx
+
+16
+
+800
+
+2
+
+Tx
+
+64
+
+700
+
+• Table des ports AFDX com Tx
+
+LIAS
+
+Port
+Id
+
+VL
+Id
+
+MAC
+Dest
+
+IP Dest
+
+UDP dest
+
+IP src
+
+UDP src
+
+Frag
+
+Q/S
+
+1000
+
+1
+
+E/S2
+
+10.10.1.2
+
+1020
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+1
+
+E/S3
+
+10.10.1.11
+
+1030
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+1
+
+E/S3
+
+10.10.1.12
+
+1040
+
+10.10.1.1
+
+1000
+
+N
+
+S
+
+1000
+
+2
+
+E/S3
+
+10.10.1.12
+Ridouard
+F.
+
+1010
+
+10.10.1.1
+
+1010
+
+Y
+
+179
+
+Q
+
+

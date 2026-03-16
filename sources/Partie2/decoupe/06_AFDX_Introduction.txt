@@ -1,0 +1,776 @@
+Les systèmes avioniques : AFDX
+
+Ridouard Frédéric
+Bauer Henri
+
+Plan
+
+• Pourquoi l’AFDX?
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+129
+
+Plan
+
+• Pourquoi l’AFDX?
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+130
+
+AFDX?
+• Technologies existantes (réseau):
+• ARINC 429 :
+• Peu de débit,
+• Maillage trop complexe…
+
+• ARINC 629 :
+• Très cher
+• Définition et maintenance des trames bus
+• Manque de souplesse, et évolution difficile
+
+131
+
+AFDX?
+• Solutions envisageables :
+• Les réseaux haut débit:
+•
+•
+•
+•
+•
+•
+
+Ethernet
+ATM
+ISO 802.4, 802.5
+SAE 4074 Linear Token Passing Bus
+SAE 4075 High Ring Bus
+USB
+
+• Bus avion:
+•
+•
+•
+•
+•
+
+ARINC 629
+SAE 4074 Linear Token Passing Bus
+SAE 4075 High Ring Bus
+EN3910 / STANAG 3910
+MIL-STD-1553
+
+• Bus de terrain:
+• FIP
+• CAN
+• Profibus
+
+132
+
+AFDX?
+• Critères techniques :
+• Topologie
+• Flexibilité de la technologie: ajout d’abonnés, modification de la trame
+• Complexité du réseau
+• Nbre d’abonnés, distance min/max entre abonnés, utilisation de répéteurs
+
+• Services du réseau:
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Déterminisme du réseaux
+Types d’échange: Sampling queuing, Periodique/aperiodique, Fixe/variable
+Mode d’adressage: Broadcast/multicast/unicast
+Longueur trame Maximum/Minimum
+Temps d’initialisation du réseau
+Redondances
+Solution standard
+Ségrégation réseau (impact des pannes)
+Transmission multi-fréquences (accès au réseau contraint ou libre)
+Insertion/suppression à chaud
+133
+
+AFDX?
+• Critères techniques :
+• Hardware :
+•
+•
+•
+•
+•
+•
+•
+
+Nombre de fournisseurs
+Disponibilité des outils de support
+Charge logicielle supplémentaire
+Évolutivité
+Maturité
+Caractéristiques physiques
+Fiabilité
+
+• Safety/Certification :
+• Contrôle des trames
+
+• Maintenance
+134
+
+AFDX?
+• Critères financiers :
+• Coûts récurrents
+• Installation
+• Coût du point de connexion (valeurs industrielles: -40°C, 80°C)
+
+• Coûts non récurrents
+• Coûts de développement
+• Outils de développement et de validation
+• Certification
+
+• Coûts d’exploitation
+•
+•
+•
+•
+•
+
+Stock de rechange
+Formation
+Outils
+Maintenance
+Risques
+
+• Risques fournisseur
+• Risques de développements
+• Risques concernant la maturité des produits livrés
+
+135
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+136
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+137
+
+AFDX
+• AFDX (ou ARINC 664 part 7)
+• Technologie réseau retenue pour interconnecter les
+calculateurs avioniques des programmes A380 et A400M…
+
+Avionics Full DupleX Switched Ethernet
+• Avionics : Réseau développé pour l’avionique;
+• Full Duplex : les liens sont bidirectionnels, les données sont
+transmises et reçues à travers des liens duplex à 10 ou 100Mbits/s
+(sans collision possible);
+• Switched : Les communications entre abonnés sont assurées par des
+switchs (commutateurs);
+• Ethernet : conformité aux normes Ethernet 802.3.
+138
+
+AFDX
+
+• Pourquoi l’Ethernet :
+•
+•
+•
+•
+
+Hautes performances (100Mbits/s… 1Gbits/s demain?)
+Standard connu, reconnu et mature
+Technologie à faible coût
+Outils déjà développés
+
+• Ethernet déterministe
+
+139
+
+AFDX
+• Ethernet CSMA/CD n’est pas déterministe :
+• Pertes de trames;
+• Algorithmes compliqués de retransmission;
+
+• La solution adoptée (ARINC 664) :
+• Technologie Ethernet commuté
+• Liens Full duplex;
+=> Plus de collision
+
+• Problème reporté dans les commutateurs
+
+140
+
+AFDX
+• AFDX contient
+• Les abonnés E/S (End System)
+• Les switchs (commutateurs)
+• Les harnais et les câbles
+• Le BITE réseau
+Appli
+Appli
+
+E/S
+
+Appli
+ex : FWS
+
+E/S
+
+AFDX
+
+E/S
+
+Appli
+
+E/S
+
+• Compatible IP, UDP ( et TCP en option)
+141
+
+AFDX vs ARINC 429
+ARINC 429 world
+
+LRUx
+
+AFDX world
+
+LRU6
+
+IOM
+
+AFDX Switch
+LRU1
+
+IOM
+LRU5
+
+LRU2
+
+LRM
+(module)
+
+CPIOM
+LRU4
+
+CPIOM
+
+CPIOM
+
+LRU3
+
+ARINC 429 interface
+
+•
+•
+•
+
+AFDX interface
+
+ARINC 429 link
+
+Nouvelle donnée à échanger : nouveau
+cable
+A318/A319/A320/A330/A340
+100 kbit/s
+
+•
+•
+•
+
+AFDX link
+
+Nouvelle donnée à échanger : mise à jour des
+chemins
+A380, A400M, A350
+142
+10/100 Mbit/s
+
+AFDX
+•
+•
+•
+•
+
+Réseau de 8 switches redondés (réseau A & réseau B)
+Fournisseur : Rockwell Collins
+1 barre d’alimentation par réseau
+~80 calculateurs
+• LRU standard
+• LRM (CPIOM / IOM)
+• LRU spécifiques (CDAM, DSMS, EEC)
+
+• 5 fournisseurs de E/S :
+•
+•
+•
+•
+•
+
+Rockwell Collins
+Thales / Diehl Avionik
+BAE (Moteur EA)
+Smiths (ADIRU)
+Sagem (SCI CDAM)
+
+143
+
+AFDX
+PR IM3
+FC GU3B
+
+FC GU3A
+
+FM3
+
+SEC 3
+
+ADI RU3
+
+OSCU
+
+CMV
+
+EC B
+
+PR IM1
+
+SFC C1
+
+SEC 1
+
+FC GU1A
+
+I OM 1
+
+PR IM2
+
+FC GU1B
+
+FC GU2B
+
+SW-11
+
+I OM 3
+
+FC GU2A
+
+SEC 2
+
+SFC C2
+
+I OM 2
+
+SW-12
+SW-1
+
+I OM 4
+
+SW-2
+
+SW-19
+
+ADI RU1
+
+ADI RU2
+
+SW-9
+FM1
+
+FM2
+
+A
+
+EEC 2
+
+B
+
+CDS
+L1
+
+CDS
+L2
+
+CDS
+C1
+
+CDS
+R2
+
+CDS
+R1
+
+A
+
+EEC 1
+
+B
+
+EEC 4
+
+CDS
+L3
+
+A
+
+CDS
+C2
+
+CDS
+R3
+
+A
+
+B
+
+EEC 3
+
+B
+
+SC I
+CP IOM-C1
+
+CP IOM-C2
+
+CP IOM-D1
+CP IOM-D3
+AE SU 1
+
+AE SU 2
+SW-13
+
+SW-14
+
+I OM 5
+
+I OM6
+SW-3
+
+SW-4
+
+I OM 7
+
+I OM 8
+
+SPDB 5
+
+SPDB 6
+
+CDAM
+
+SEP DC 1
+
+SEP DC 2
+SPDB 2
+
+SPDB 1
+
+SPDB 4
+
+SPDB 3
+CP IOM-E1
+
+CP IOM-E2
+
+SW-15
+
+CI DS1
+SDS1
+
+AI-D
+
+SW-16
+SW-5
+
+SW-17
+CP IOM-A2
+
+CP IOM-A1
+
+CP IOM-A3
+
+CP IOM-A4
+CP IOM-B4
+
+SW-7
+
+CP IOM-G1
+CP IOM-B1
+
+CP IOM-B2
+
+AI-UK
+
+CI DS2
+SDS2
+
+SW-6
+
+CP IOM-G2
+
+17+2FT
+
+CP IOM-G4
+
+CP IOM-G3
+
+CP IOM-B3
+CP IOM-F1
+
+CP IOM-F2
+
+CP IOM-F3
+
+CP IOM-F4
+
+AI-F
+SPDB 7
+
+DSMS
+
+144
+
+SPDB 8
+
+AFDX : Le câblage
+• Câble: STAR QUAD
+• basé sur standard UTP (Unshield
+Twisted Pair) pour l’Ethernet
+
+TX+ (or RX+)
+
+RX+ (or TX+)
+
+Filler
+
+• 2 paires torsadées
+• Full-duplex (Tx et Rx séparés)
+RX- (or TX-)
+
+TX- (or RX-)
+
+• Connectique: QUADRAX
+
+145
+
+Plan
+
+• Présentation de l’AFDX :
+•
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Généralités
+Communications (VL)
+End System
+Commutateurs
+Adressage
+Configuration
+Format des données
+La redondance
+Le BITE réseau
+Bilan
+146
+
+AFDX : Les communications
+• Communications dans l’AFDX :
+
+•
+
+Les communications avioniques sont multicast :
+•
+•
+
+Mono-emetteur
+Un ou plusieurs destinataires
+
+147
+
+AFDX : Les VL
+• Réseau AFDX = Ethernet déterministe
+• Garantir le temps de traversée d’une trame, sa gigue et la non perte de
+données.
+=> MAÎTRISE DU TRAFIC
+LRU A
+LRM D
+VL2
+
+VL1
+
+• Virtual Links (VL)
+•
+•
+•
+•
+•
+•
+•
+
+Liens virtuels
+1 transmetteur
+1 ou plusieurs récepteurs
+Bande passante garantie
+Temps de latence borné
+Variation du délai bornée (jitter)
+Chemin statique
+
+LRU B
+
+SWITCH
+
+SWITCH
+
+LRM C
+
+LRU F
+
+LRU E
+
+VL3
+
+=> Dans l’AFDX, toute communication est réalisée à travers ces liens virtuels
+que sont les VL.
+
+148
+
+AFDX : Les VL
+• Concept :
+
+• Abstraction :
+
+149
+
+AFDX : Les VL
+• Représentation logique :
+• Réservation de la bande passante
+
+150
+
+AFDX : Les VL
+• Caractériser un VL par sa bande passante ne suffit pas. La bande passante ne permet
+pas de caractériser la répartition dans le temps des trames.
+Rafale
+1s
+5 trames/s
+
+Répartis uniformément
+
+• VL est caractérisé par
+
+• BAG (Bandwidth Allocation Gap): Délai minimum entre deux trames
+consécutives. Valeurs (harmoniques) du BAG : 1, 2, 4, 8, 16, 32, 64, 128ms.
+• Smax ou MVLS (Maximum VL Size): représente la taille maximum des trames ;
+• Smin : représente la taille maximum des trames ;
+BAG
+
+
+
+Smax
+BAG
+
+=> Bande passante Max
+
+Smax
+
+• Il s’agit d’un profil "max" … une trame n’est pas émise obligatoirement tous les
+151
+BAG.
+
+

@@ -1,0 +1,345 @@
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+109
+
+IOM
+
+Module IOM
+
+UR 429
+
+UE 429
+
+Interface 429
+
+Unité de Traitement des Communications (UTC)
+
+UER AFDX
+
+110
+
+IOM
+• Unité d’émission ARINC 429 (UE429)
+• Médium de communication modélisé par une file FIFO de paquets 429 :
+Paquet 429
+Nom Ident Longueur
+ADR1 100
+2
+
+Paquet 429
+Nom Ident Longueur
+ADR1 100
+2
+
+FIFO Serveur
+
+• Un paquet = plusieurs labels 429
+• taille d’un paquet dans la file = nombre de labels du paquet
+• saturation possible de la FIFO (solutions : refus du paquet ou paquet retaillé)
+
+• Bus ARINC 429 :
+• bus mono-émetteur à diffusion
+• identificateur de ligne encapsulé dans les messages.
+
+• Unité de réception ARINC 429 (UR429)
+• PAL (piège à label) : reconnaît les identificateurs de ligne
+• délai de reconnaissance d’un paquet (dimensionné pour éviter les pertes).
+Paquet 429
+Nom Ident Longueur
+ADR1 100
+2
+
+Paquet 429
+Nom Ident Longueur
+ADR1 100
+2
+
+FIFO Serveur
+
+111
+
+IOM
+
+• Unité de traitement de communications (UTC) de l'IOM
+• Deux rôles du module d’E/S :
+• réceptionner les paquets 429 venant de l’extérieur de l’étagère, et les ré-émettre aux modules
+cœur via l’AFDX.
+• récupérer les trames AFDX venant des cœurs via le réseau AFDX et générer les paquets 429
+pour envoi à l’extérieur de l’étagère.
+
+112
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+113
+
+GWM
+
+Module GWM
+
+UER Ethernet
+
+En E : filtre les trames selon les adresses
+et récupère celles à traiter
+En S : émet les données après
+consultation de la trame
+
+Unité de Traitement des Communications (UTC)
+
+UER AFDX
+
+ Idem IOM
+
+ Idem IOM et CPIOM
+
+114
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+115
+
+ADCN
+• Aircraft Data Communication Network :
+• Réseau global
+• Réseau cœur : AFDX
+• Autres réseaux :
+•
+•
+•
+•
+
+CAN
+Signaux analogiques
+Signaux discrets
+ARINC 429
+
+116
+
+ADCN
+• Aircraft Data Communication Network :
+
+117
+
+ADCN
+• Aircraft Data Communication Network :
+
+118
+
+ADCN : LE MONDE OUVERT
+• Monde ouvert :
+• Réseau Ethernet standard :
+• De la compagnie aérienne
+• Airbus :
+• Gestion centralisée du Bite
+• Téléchargement A615-A (TFTP)
+
+• Applications Airbus ont besoin de pouvoir joindre le monde
+avionique
+• Interconnexion est assurée par le SCI : Secure Communication
+Interface
+
+119
+
+ADCN : LE MONDE OUVERT
+
+Monde ouvert
+Réseau ethernet
+
+E
+t
+h
+e
+r
+n
+e
+t
+
+S
+C
+I
+
+E
+/
+S
+
+Monde avionique
+Réseau AFDX
+
+• Fonctionnalités du SCI :
+• Passerelle AFDX / ethernet
+• Translation d’adresses IP : les adresses IP du monde avionique sont
+« cachées » : le SCI les remplace par des adresses translatées,
+définies par table de configuration.
+
+120
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+121
+
+PROJETS FUTURS
+• Le concept de l’IMA est réutilisé et « adapté » sur les prochains avions
+A400M,A350 :
+• Architecture mature et disponible immédiatement;
+• Maîtrise => risques minimum
+• Prochain avion : A320 NEO (New Engine Option)
+
+• IMA2G (Seconde Génération)
+• Extension de l’IMA
+
+122
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+123
+
+IMA2G
+• IMA2G (Seconde Génération) :
+•
+•
+•
+•
+
+Projet européen SCARLETT (40 partenaires);
+Horizon 2015 (plus ou moins);
+Elargir les domaines d’application au monde ouvert…);
+FLEXIBILITÉ;
+
+• Objectifs :
+• SCARLETT fournira une chaîne d’outils :
+• Développement, intégration, certification et maintenance;
+
+• Maximum de standardisation et de normalisation par la communauté;
+• => Réutilisation des composants et des outils;
+
+• Matériel :
+•
+•
+•
+•
+
+Hardware plus souple;
+CPIOM remplacés par des « Distributed Modular Electronics »;
+Séparation des entrées/sorties des composants de calculs;
+Introduction des calculateurs multi-cœurs;
+
+• Logiciel :
+• Plus d’indépendance entre la plateforme et les applications;
+=> Certification plus incrémentale
+
+124
+
+IMA2G
+• Mécanismes de reconfiguration :
+• Gestion de la redondance
+• Allocation dynamique
+• Ressources aux applications
+
+
+
+Dynamiquement par la plateforme
+(au lieu de statiquement par le système)
+
+• PikeOS Safe and Secure Virtualisation (SSV)
+•
+•
+•
+•
+•
+•
+•
+•
+•
+
+Plateforme disponible mais petite et flexible;
+SCARLETT est construit autour de ce concept;
+Basé sur un micro-noyau;
+Fournit une interface logicielle pour les machines virtuelles;
+Protège le partitionnement;
+Para-Virtualisation : indépendant du matériel;
+Jusqu’à 62 partitions;
+Partitions sont totalement indépendantes (marche/arrêt);
+<10000 lignes de code => certification peu chère.
+125
+
+Plan
+• La nouvelle architecture IMA
+• IMA selon Boeing (777)
+• IMA selon Airbus (A380)
+• Les modules :
+• CPIOM
+• IOM
+• GWM
+
+• ADCN
+• Projets futurs:
+• IMA2G
+• Évolution future
+
+126
+
+FUTUR
+
+127
+
+

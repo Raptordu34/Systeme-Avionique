@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Architectures & Évolution des besoins</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Trois générations d'architecture</strong> — centralisée (1 calculateur global, SPOF), fédérale (découpage par domaine, bus MIL-STD-1553B), répartie (1 LRU = 1 fonction avionique, standard Airbus A300→A340)</li>
+            <li><strong>Architecture répartie</strong> — fonctionnement décentralisé et asynchrone ; bus ARINC 429 unidirectionnel, mono-émetteur, multi-récepteurs (≤ 20) ; chaque calculateur propriétaire de ses bus</li>
+            <li><strong>Bus ARINC 429</strong> — mot de 32 bits (label 8 bits + données 19 bits + SDI/SSM/P) ; débit 12,5 ou 100 kbit/s ; technologie des années 1970</li>
+            <li><strong>Limites de la répartie</strong> — explosion du nombre de bus (368 sur A340), câblage jusqu'à 100 km, pas de déterminisme global, pas de bidirectionnel</li>
+            <li><strong>Nouveaux besoins (A380+)</strong> — liaisons bidirectionnelles, partage global d'informations, protocoles complexes, simplification du câblage → transition vers l'IMA</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <h3>Architecture centralisée</h3>
+        <p>
+            La première génération d'architectures avioniques repose sur un <strong>calculateur central unique</strong>
+            qui prend en charge l'ensemble des fonctions de l'avion. Conceptuellement simple, cette approche
+            présente un défaut rédhibitoire en contexte aéronautique.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Définition — Architecture centralisée :</strong> Architecture dans laquelle un seul calculateur
+            gère l'ensemble des fonctions avioniques. Toute la logique de traitement est concentrée en un
+            point unique du système.
+        </div>
+
+        <div class="callout-danger">
+            <strong>Point de défaillance unique (SPOF) :</strong> La perte du calculateur central entraîne
+            la chute de l'ensemble du système. Ce niveau de vulnérabilité est incompatible avec les
+            exigences de sécurité de l'aviation civile. Un seul composant défaillant = tout l'avion hors service.
+        </div>
+
+        <div class="figure-box">
+            <div style="display:flex; justify-content:center; align-items:center; gap: 3rem; padding: 1.5rem 0; flex-wrap: wrap;">
+                <!-- Centralisée -->
+                <div style="text-align:center;">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="25" y="25" width="30" height="30" rx="4" fill="rgba(214,117,86,0.15)" stroke="#d67556" stroke-width="1.5"/>
+                        <line x1="40" y1="25" x2="40" y2="10" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
+                        <line x1="40" y1="55" x2="40" y2="70" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
+                        <line x1="25" y1="40" x2="10" y2="40" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
+                        <line x1="55" y1="40" x2="70" y2="40" stroke="#9e9a94" stroke-width="1" opacity="0.5"/>
+                        <text x="40" y="74" text-anchor="middle" font-family="Inter" font-size="8" fill="#9e9a94">Centralisée</text>
+                    </svg>
+                </div>
+                <!-- Vers -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 20 12 L 13 6.5 L 13 10 Q 5 10 4.5 12 Q 5 14 13 14 L 13 17.5 Z" fill="#9e9a94" opacity="0.5"/>
+                </svg>
+                <!-- Répartie -->
+                <div style="text-align:center;">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
+                        <rect x="55" y="10" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
+                        <rect x="10" y="55" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
+                        <rect x="55" y="55" width="15" height="15" rx="2" fill="rgba(158,154,148,0.1)" stroke="#9e9a94" stroke-width="1"/>
+                        <path d="M 25 17 L 50 17" stroke="#d67556" stroke-width="1" stroke-dasharray="2 1"/>
+                        <path d="M 17 25 L 17 50" stroke="#d67556" stroke-width="1" stroke-dasharray="2 1"/>
+                        <text x="40" y="74" text-anchor="middle" font-family="Inter" font-size="8" fill="#9e9a94">Répartie</text>
+                    </svg>
+                </div>
+            </div>
+            <figcaption>Fig. 1 — Évolution : du calculateur unique (SPOF) aux unités autonomes (LRU)</figcaption>
+        </div>
+
+        <h3>Architecture fédérale</h3>
+        <p>
+            Pour remédier à la vulnérabilité de l'architecture centralisée, l'architecture fédérale distribue
+            les calculateurs <strong>à proximité physique des capteurs et actionneurs</strong> qu'ils pilotent.
+            La logique est découpée par <em>domaine fonctionnel</em> (navigation, pilotage automatique,
+            gestion carburant…), chaque domaine disposant de son propre calculateur.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Bus MIL-STD-1553B :</strong> Standard militaire utilisé pour les communications
+            inter-calculateurs dans l'architecture fédérale. Bus série bidirectionnel commandé par un
+            maître (Bus Controller), avec des esclaves (Remote Terminals). La communication est centralisée
+            par domaine, pas globalement.
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Avantages">
+                <p>Réduction de la vulnérabilité — la panne d'un calculateur n'affecte qu'un domaine.
+                Simplicité de conception. Tolérance aux fautes améliorée par rapport à la centralisée.</p>
+            </div>
+            <div class="compare-item bad" data-label="Limite">
+                <p>Vulnérabilité résiduelle <em>par domaine</em> et pour les communications inter-domaines :
+                le bus de communication lui-même reste un point faible par domaine.</p>
+            </div>
+        </div>
+
+        <h3>Architecture répartie — Principe</h3>
+        <p>
+            L'architecture répartie pousse la logique fédérale jusqu'à son terme : chaque
+            <strong>fonction avionique</strong> dispose de son propre calculateur dédié, sans partage
+            de ressources matérielles. C'est l'architecture de référence des Airbus de la génération
+            A300 à A340.
+        </p>
+
+        <div class="highlight-box">
+            <strong>LRU — Line Replaceable Unit :</strong> Module calculateur embarqué standardisé,
+            remplaçable directement en ligne (sur avion, en escale, sans démontage complexe).
+            Principe fondamental : <em>1 LRU = 1 fonction avionique</em>.
+            Exemple : un LRU dédié au pilote automatique, un autre à la gestion carburant, un autre
+            aux alertes de proximité sol (GPWS)…
+        </div>
+
+        <p>Chaque LRU est <strong>propriétaire de ses propres bus</strong> de communication :</p>
+        <ul>
+            <li><strong>Bus mono-émetteur :</strong> seul le LRU propriétaire émet sur un bus donné — pas de risque de collision</li>
+            <li><strong>Multi-récepteurs :</strong> tous les LRU abonnés peuvent lire les données diffusées sur ce bus</li>
+            <li>L'interconnexion forme un réseau dense de bus <em>broadcast</em> unidirectionnels</li>
+            <li>Un équipement peut disposer de plusieurs bus en émission <em>et</em> en réception simultanément</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie radio FM :</strong> Imaginez une station de radio locale — une seule station
+            émet sur une fréquence donnée (mono-émetteur), tous les récepteurs peuvent capter le signal
+            (multi-récepteurs), mais personne d'autre ne peut émettre sur cette fréquence.
+            Le bus ARINC 429 fonctionne exactement de cette façon : le LRU émetteur "diffuse",
+            les autres "écoutent".
+        </div>
+
+        <h3>Architecture répartie — Caractère asynchrone</h3>
+        <p>
+            Les LRU fonctionnent de manière totalement <strong>indépendante</strong>, sans référence
+            temporelle commune entre eux. Il n'y a ni horloge globale ni mécanisme de synchronisation
+            inter-calculateurs.
+        </p>
+
+        <ul>
+            <li><strong>Pas d'horloge commune</strong> entre les LRU</li>
+            <li><strong>Pas de mécanisme de synchronisation</strong> d'horloges</li>
+            <li><strong>Mémoire par bus diffusant :</strong> le dernier message reçu écrase l'ancien — <em>tampon à écrasement</em></li>
+            <li><strong>Pas de synchronisation</strong> entre les fonctions avioniques</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Modélisation système :</strong> Un avion en architecture répartie peut être vu comme
+            un ensemble de <em>processus asynchrones communicants</em>. Les fonctions s'échangent des données
+            via les bus, mais chacune s'exécute à son propre rythme.
+            L'avion lui-même est un ensemble de fonctions indépendantes dont la seule interaction
+            se résume à des échanges de données — ce qui simplifie la validation individuelle de chaque LRU.
+        </div>
+
+        <div class="callout-warning">
+            <strong>Limite de l'asynchronisme :</strong> L'absence de référence temporelle commune introduit
+            des variations de délais entre les données émises et reçues. Pour un avion civil (comportement
+            stable et lent), ces variations restent acceptables. Pour un avion de combat ou très agile,
+            ce modèle atteindrait rapidement ses limites.
+        </div>
+
+        <h3>Architecture répartie — Avantages</h3>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Intégration">
+                <p><strong>Simplicité d'intégration :</strong> l'avion est un ensemble de fonctions
+                indépendantes dont la seule interaction est l'échange de données.
+                Chaque LRU peut être validé séparément avant intégration.</p>
+            </div>
+            <div class="compare-item good" data-label="Conception">
+                <p><strong>Comportement temps réel prévisible :</strong> chaque LRU est dimensionné
+                pour sa seule fonction — pas d'interférence de ressources, facile à maîtriser,
+                comprendre et dimensionner.</p>
+            </div>
+            <div class="compare-item good" data-label="Développement">
+                <p><strong>Développement séparé des fonctions :</strong> chaque fournisseur développe
+                son LRU indépendamment. Bien adapté à la logique industrielle fédérale à la Airbus.</p>
+            </div>
+            <div class="compare-item good" data-label="Maintenance">
+                <p><strong>LRU facilement remplaçable :</strong> un technicien en escale peut remplacer
+                un LRU défectueux sans toucher aux autres systèmes — remplacement en ligne.</p>
+            </div>
+        </div>
+
+        <h3>Architecture répartie — Inconvénients</h3>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Asynchronisme">
+                <p><strong>Robustesse à l'asynchronisme requise :</strong> variation des délais induite
+                par l'absence de référence temporelle commune. Impose des marges de conception
+                conservatrices.</p>
+            </div>
+            <div class="compare-item bad" data-label="Déterminisme global">
+                <p><strong>Absence de chef d'orchestre :</strong> aucune entité ne coordonne l'ensemble.
+                Pas de vue globale cohérente à un instant donné — pas de déterminisme global.</p>
+            </div>
+            <div class="compare-item bad" data-label="Scalabilité">
+                <p><strong>Explosion du nombre de calculateurs et de bus :</strong> chaque nouvelle
+                fonction exige un nouveau LRU, de nouveaux bus et de nouveaux câbles physiques.
+                Le maillage devient rapidement ingérable.</p>
+            </div>
+        </div>
+
+        <div class="callout-danger">
+            <strong>Exemple A340 — ampleur du problème :</strong> L'architecture répartie de l'A340
+            nécessite <strong>368 bus ARINC 429</strong> et un câblage total d'environ
+            <strong>100 km</strong> à l'intérieur de l'avion. Toute nouvelle fonction avionique implique
+            un nouveau câblage physique — ce qui rend les évolutions post-certification extrêmement
+            coûteuses et longues.
+        </div>
+
+        <h3>Exemple A340 — L'architecture répartie en pratique</h3>
+        <p>
+            L'extrait de l'A340 illustre concrètement la complexité du maillage. Trois centrales
+            inertielles et anémométriques (<strong>ADIRU 1, 2, 3</strong>) transmettent leurs données
+            de vitesse, position et accélération via bus ARINC 429 à quatre ordinateurs de gestion
+            de vol (<strong>FMGEC 1/COM, 1/MON, 2/COM, 2/MON</strong>), eux-mêmes reliés à de
+            nombreux autres équipements.
+        </p>
+
+        <div class="callout-info">
+            <strong>Lecture du schéma A340 :</strong> Chaque flèche rouge représente un bus ARINC 429
+            unidirectionnel (sens unique). On distingue clairement le
+            <em>"monde de l'avionique classique"</em> (LRU certifiés, fonctions critiques) du
+            <em>"monde des applications non essentielles"</em> (compagnies, passagers, maintenance).
+            Cette séparation physique est une exigence de sécurité — les deux mondes ne partagent
+            pas de ressources matérielles.
+        </div>
+
+        <h3>Bus ARINC 429 — Structure et technologie</h3>
+        <p>
+            Le bus <strong>ARINC 429</strong> est le standard de communication de l'architecture répartie,
+            utilisé massivement sur les Airbus A300 à A340. Standardisé en 1966, il représente
+            la technologie de communication avionique des années 1970.
+        </p>
+
+        <div class="highlight-box">
+            <strong>ARINC 429 en résumé :</strong> Bus série <em>unidirectionnel</em>,
+            mono-émetteur, multi-récepteurs. Support physique : câble paire torsadée blindée.
+            Débit : <strong>12,5 kbit/s</strong> (basse vitesse) ou <strong>100 kbit/s</strong>
+            (haute vitesse). Chaque message = un mot de <strong>32 bits</strong>.
+            Adressage par <em>label</em> — chaque récepteur filtre les messages qui l'intéressent.
+        </div>
+
+        <h4>Format du mot ARINC 429 (32 bits)</h4>
+        <p>
+            Le mot ARINC 429 est structuré en cinq champs. Chaque récepteur utilise le
+            <strong>label</strong> comme filtre pour ne traiter que les informations pertinentes,
+            sans protocole d'adressage complexe.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Champ</th>
+                        <th>Bits</th>
+                        <th>Taille</th>
+                        <th>Rôle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>P</strong></td>
+                        <td>32</td>
+                        <td>1 bit</td>
+                        <td>Bit de parité — contrôle d'erreur de transmission</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SSM</strong></td>
+                        <td>31–30</td>
+                        <td>2 bits</td>
+                        <td>Sign/Status Matrix — type et validité de la donnée (valide, test, échec…)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DATA</strong></td>
+                        <td>29–11</td>
+                        <td>19 bits</td>
+                        <td>Données utiles : valeur numérique, état discret, données de maintenance, caractère ISO</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SDI</strong></td>
+                        <td>10–9</td>
+                        <td>2 bits</td>
+                        <td>Source/Destination Identifier — identification de l'émetteur et des récepteurs ciblés</td>
+                    </tr>
+                    <tr>
+                        <td><strong>LABEL</strong></td>
+                        <td>8–1</td>
+                        <td>8 bits</td>
+                        <td>Identifie le <em>type</em> d'information (altitude, vitesse, cap…) — filtre utilisé par les récepteurs pour sélectionner la donnée</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tip-box">
+            <strong>Rôle du label — analogie :</strong> Le label fonctionne comme la fréquence d'une radio :
+            chaque récepteur ne "capte" que les labels qui l'intéressent et ignore tous les autres messages
+            du bus. Par exemple, un ordinateur de navigation filtre le label "altitude barométrique" et ignore
+            le label "température moteur". C'est un mécanisme de <em>filtrage par abonnement</em> simple,
+            sans overhead protocolaire — ce qui explique l'efficacité du bus sur des débits très faibles.
+        </div>
+<h4>Topologie du réseau ARINC 429</h4>
+
+<div class="figure-box">
+    <div style="display:flex; justify-content:center; align-items:center; gap: 1rem; padding: 1.5rem 0; flex-wrap: wrap;">
+        <!-- Emetteur -->
+        <div style="text-align:center;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="12" y="10" width="56" height="52" rx="4" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                <circle cx="22" cy="20" r="2.5" fill="#d67556" opacity="0.7"/>
+                <text x="40" y="74" text-anchor="middle" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#d67556">Émetteur</text>
+            </svg>
+        </div>
+        <!-- Bus line -->
+        <div style="display:flex; flex-direction:column; align-items:center; width: 120px;">
+            <svg width="120" height="24" viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="0" y1="20" x2="200" y2="20" stroke="#d67556" stroke-width="2" stroke-linecap="round"/>
+                <path d="M 192 20 L 183 14 Q 186 20 183 26 Z" fill="#d67556"/>
+            </svg>
+            <!-- Taps -->
+            <div style="display:flex; justify-content:space-around; width: 100%; margin-top: -4px;">
+                <svg width="12" height="20" viewBox="0 0 16 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="8" y1="0" x2="8" y2="30" stroke="#9e9a94" stroke-width="1.5"/>
+                    <circle cx="8" cy="0" r="3" fill="#d67556"/>
+                </svg>
+                <svg width="12" height="20" viewBox="0 0 16 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="8" y1="0" x2="8" y2="30" stroke="#9e9a94" stroke-width="1.5"/>
+                    <circle cx="8" cy="0" r="3" fill="#d67556"/>
+                </svg>
+            </div>
+        </div>
+        <!-- Recepteurs -->
+        <div style="display:flex; flex-direction:column; gap: 0.5rem;">
+            <svg width="100" height="32" viewBox="0 0 100 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="98" height="30" rx="6" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="50" y="20" text-anchor="middle" font-family="Inter" font-size="9" fill="#9e9a94">Récepteur 1</text>
+            </svg>
+            <svg width="100" height="32" viewBox="0 0 100 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="98" height="30" rx="6" fill="rgba(158,154,148,0.08)" stroke="#9e9a94" stroke-width="1.5"/>
+                <text x="50" y="20" text-anchor="middle" font-family="Inter" font-size="9" fill="#9e9a94">Récepteur 2</text>
+            </svg>
+        </div>
+    </div>
+    <figcaption>Fig. 2 — Topologie ARINC 429 : diffusion mono-émetteur / multi-récepteurs</figcaption>
+</div>
+
+<ul>
+    <li><strong>Mono-émetteur :</strong> un seul équipement peut émettre sur un bus donné</li>
+    <li><strong>Multi-destinataires :</strong> jusqu'à <strong>20 récepteurs</strong> maximum par bus (en pratique, 95% des bus A340 ont moins de 10 récepteurs)</li>
+...
+            <li><strong>Longueur maximale :</strong> 100 mètres par segment de bus</li>
+            <li>Un équipement peut avoir <em>plusieurs bus en émission et en réception simultanément</em></li>
+        </ul>
+
+        <h4>Bilan ARINC 429 — avantages et limites</h4>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Points forts">
+                <p>Déterminisme local garanti (mono-émetteur = zéro collision).
+                Protocole simple : label + info, impact mineur du nombre de récepteurs
+                (on se branche et on écoute). Robustesse éprouvée sur des décennies d'exploitation.</p>
+            </div>
+            <div class="compare-item bad" data-label="Points faibles">
+                <p>Débits faibles (100 kbit/s). Communication <strong>unidirectionnelle</strong> uniquement.
+                Câblage physique massif. Format contraint (20 bits utiles). Nouvel équipement = nouveau
+                câblage physique obligatoire. Protocoles sophistiqués impossibles à supporter.</p>
+            </div>
+        </div>
+
+        <h3>Évolution des besoins — De l'A300 à l'A380</h3>
+        <p>
+            Depuis l'A300 (1972), le nombre de fonctions informatisées embarquées a crû de façon
+            exponentielle. Trois grandes catégories de nouvelles fonctions sont apparues :
+        </p>
+        <ul>
+            <li><strong>Sécurité du vol :</strong> protection d'enveloppe de vol, avertisseur de proximité sol (GPWS), anti-collision trafic (TCAS)</li>
+            <li><strong>Maintenance :</strong> monitoring continu des systèmes</li>
+            <li><strong>Passagers :</strong> divertissement à bord (IFE — In-Flight Entertainment)</li>
+        </ul>
+
+        <div class="metrics-grid">
+            <div class="metric-card good">
+                <span class="metric-value">~10</span>
+                <span class="metric-label">Bus — A300B (1972)</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">136</span>
+                <span class="metric-label">Bus — A310 (1983)</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">253</span>
+                <span class="metric-label">Bus — A320 (1988)</span>
+            </div>
+            <div class="metric-card bad">
+                <span class="metric-value">368</span>
+                <span class="metric-label">Bus — A340 (1993)</span>
+            </div>
+        </div>
+
+        <p>
+            Chaque nouvelle génération d'avion entraîne la création de nouveaux calculateurs dédiés,
+            avec des conséquences industrielles lourdes :
+        </p>
+        <ul>
+            <li>Nouveaux <em>part numbers</em> à certifier et à documenter</li>
+            <li>Câblage supplémentaire (masse, volume, fiabilité réduite)</li>
+            <li>Consommation électrique accrue à bord</li>
+            <li>Nouvelles sources de manque de fiabilité</li>
+            <li>Risque d'obsolescence des composants accéléré</li>
+            <li>Impact compagnie : maintenance spécifique, outillage dédié, erreurs humaines plus fréquentes</li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>Coût du cycle de vie :</strong> Sur la durée de vie d'un avion (20 à 30 ans),
+            les nombreuses mises à jour fonctionnelles et remplacements de matériels obsolètes
+            nécessitent des interventions physiques sur le câblage.
+            Chaque modification d'un LRU peut imposer un recâblage partiel — avec des temps
+            d'immobilisation et des coûts importants pour les compagnies aériennes.
+        </div>
+
+        <h3>Nouveaux besoins — Vers une rupture architecturale</h3>
+        <p>
+            Face à ces limitations, de nouveaux impératifs émergent qui sont structurellement
+            incompatibles avec le paradigme ARINC 429 / architecture répartie :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Limite ARINC 429">
+                <p>Communication <strong>unidirectionnelle</strong> uniquement — impossible de faire
+                de la commande-réponse, du téléchargement d'équipements ou de la mise à jour
+                logicielle sur calculateurs.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Besoin → Liaisons bidirectionnelles">
+                <p>Échanges importants de données dans les deux sens : téléchargement d'équipements,
+                mise à jour de logiciels embarqués, commande-réponse avec acquittement.</p>
+            </div>
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Limite ARINC 429">
+                <p>Chaque LRU n'a accès qu'aux bus auxquels il est physiquement connecté.
+                Accroître l'interconnexion = multiplier les câbles physiques.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Besoin → Accès global">
+                <p>Interdépendance croissante des systèmes, augmentation des échanges entre fonctions.
+                Il faut que <em>toutes les informations</em> soient accessibles à tout moment,
+                depuis n'importe quel équipement autorisé.</p>
+            </div>
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Limite ARINC 429">
+                <p>Format rigide (32 bits, label + données simples). Protocoles sophistiqués
+                (reprise d'erreur, acquittement, gestion de sessions) impossibles à supporter.
+                Nouveau câblage obligatoire pour chaque ajout d'équipement.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Besoin → Protocoles standards">
+                <p>Flexibilité des architectures de communication, gestion des options avion,
+                protocoles ouverts et standardisés. Ouverture vers le monde extérieur
+                (compagnies, opérateurs de maintenance).</p>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Conclusion — vers l'IMA :</strong> Ces nouveaux besoins (bidirectionnel,
+            partage global, protocoles complexes, simplification du câblage) sont les moteurs
+            directs de la transition vers l'architecture <strong>IMA — Integrated Modular Avionics</strong>,
+            introduite sur l'A380 en 2007. L'IMA permet de multiplier les fonctionnalités par
+            un facteur 100 à 1000 par rapport aux générations précédentes, tout en <em>réduisant</em>
+            le nombre d'équipements électroniques embarqués.
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Surveillance des systèmes — Monitoring, System Display, Data Recorders</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>CMS (Central Maintenance System)</strong> — médecin embarqué de l'avion : le BITE effectue des auto-tests au démarrage, en continu (cycliques) et à la demande, puis signale les pannes via CFDS, ACARS ou imprimante.</li>
+            <li><strong>Classification I / II / III</strong> — Classe I : impact opérationnel direct, affichage automatique, décision GO / GO IF / NO GO. Classe II : pas d'impact vol, visible via STATUS ECAM, réparation planifiée (≤ 600 h ou 10 jours). Classe III : silencieuse, aucune échéance imposée.</li>
+            <li><strong>ECAM</strong> — deux afficheurs cockpit : l'<em>Engine Warning Display</em> (EWD, en haut) surveille les réacteurs et centralise les alarmes ; le <em>System Display</em> (SD, en bas) présente 12 pages synoptiques des systèmes avion (moteurs, carburant, hydraulique, électrique, portes, trains…).</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ── CMS ── -->
+        <hr class="section-divider">
+        <h3>CMS — Central Maintenance System</h3>
+
+        <p>
+            Le <strong>CMS</strong> (<em>Central Maintenance System</em>) est le système de surveillance
+            et de diagnostic intégré de l'avion. Son rôle est triple : <em>détecter</em> les défaillances,
+            les <em>enregistrer</em> et les <em>signaler</em> aux acteurs concernés (équipage ou
+            maintenance). On peut le comparer au médecin embarqué de l'avion : au lieu d'attendre
+            qu'un technicien constate une panne à l'escale, l'avion se surveille lui-même en permanence
+            et transmet ses diagnostics en temps réel.
+        </p>
+
+        <h4>BITE — Built-In Test Equipment</h4>
+
+        <p>
+            Le <strong>BITE</strong> (<em>Built-In Test Equipment</em>) désigne l'ensemble des circuits
+            et logiciels de test intégrés à chaque système avionique. C'est l'équivalent du
+            <em>POST</em> (<em>Power-On Self-Test</em>) d'un ordinateur — mais décliné en quatre modes
+            selon le contexte opérationnel.
+        </p>
+
+        <ul>
+            <li>
+                <strong>Power Up Tests</strong> — exécutés automatiquement au <em>démarrage</em> du système.
+                <ul>
+                    <li>
+                        <strong>Au sol :</strong> version complète — tests approfondis des microprocesseurs,
+                        mémoires, liens de communication et entrées/sorties. Aucun risque d'interférence
+                        avec le vol ; on peut mobiliser toutes les ressources disponibles.
+                    </li>
+                    <li>
+                        <strong>En vol :</strong> version allégée, limitée aux vérifications non intrusives
+                        pour ne pas perturber les systèmes de navigation ou de commandes de vol en cours
+                        d'utilisation.
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <strong>Cyclic Tests</strong> — tests conduits <em>en continu</em> pendant l'exploitation,
+                sans jamais affecter les opérations en cours. Exemple emblématique :
+                le <strong>chien de garde</strong> (<em>watchdog timer</em>). Ce mécanisme surveille
+                si un processeur répond dans un délai imparti ; s'il ne répond plus (boucle infinie,
+                crash logiciel), le chien de garde déclenche un redémarrage automatique —
+                exactement comme un administrateur système qui surveille la disponibilité d'un service
+                web et le relance dès qu'il cesse de répondre.
+            </li>
+            <li>
+                <strong>System Test</strong> — test complet déclenché à la demande par les équipes
+                de maintenance <em>au sol</em>. Permet de reproduire des conditions difficiles à observer
+                en vol pour affiner le diagnostic et valider une réparation.
+            </li>
+            <li>
+                <strong>Specific Tests</strong> — tests spécialisés qui placent un système dans des
+                conditions particulières pour valider son comportement dans un scénario précis
+                (ex. : forcer l'ouverture d'une vanne et vérifier le retour de position, ou tester
+                une chaîne de détection de fumée en injectant une impulsion de test).
+            </li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie globale :</strong> Un smartphone effectue lui aussi des auto-tests au
+            démarrage (mémoire, capteurs, antennes), des vérifications cycliques en arrière-plan,
+            et propose des diagnostics avancés en mode développeur. Le BITE avionique suit exactement
+            la même logique — avec des contraintes de sécurité et de certification sans commune mesure.
+        </div>
+
+        <h4>Enregistrement et signalement des défaillances</h4>
+
+        <p>
+            Une fois une défaillance détectée, le CMS doit la rendre accessible aux bonnes personnes
+            au bon moment. Trois canaux coexistent :
+        </p>
+
+        <ul>
+            <li>
+                <strong>CFDS (<em>Centralized Fault Display System</em>)</strong> — interface de
+                signalisation visuelle ou sonore dans le cockpit et sur les panneaux de maintenance.
+                C'est la « boîte à outils » numérique du technicien à l'escale : il y consulte
+                les codes de panne, accède aux historiques et déclenche des tests au sol.
+            </li>
+            <li>
+                <strong>ACARS (<em>Aircraft Communication Addressing and Reporting System</em>)</strong> —
+                liaison de données numérique air-sol qui transmet automatiquement les codes de panne
+                à la compagnie ou au constructeur pendant le vol. Concrètement, avant même que
+                l'avion atterrisse, les techniciens savent déjà quelle pièce commander ou quelle
+                procédure de réparation préparer — réduisant le temps d'escale.
+            </li>
+            <li>
+                <strong>Imprimantes et sauvegardes disque</strong> — traces physiques des défaillances
+                imprimées à l'escale ou archivées pour l'analyse différée et les rapports réglementaires.
+            </li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Info :</strong> Sur A320, le CFDS est accessible via le
+            <em>Multipurpose Control and Display Unit</em> (MCDU) en mode maintenance.
+            Sur A330/A340, un écran dédié CMS joue ce rôle. Dans les deux cas, le système
+            permet à la maintenance de consulter les pannes classées par ATA chapter,
+            de lancer des tests BITE et d'imprimer les rapports de vol.
+        </div>
+
+        <!-- ── CLASSIFICATION ── -->
+        <hr class="section-divider">
+        <h3>Classification des défaillances</h3>
+
+        <p>
+            Toutes les pannes ne se valent pas. Un capteur secondaire de pression qui dérive
+            n'a pas le même impact qu'un réacteur qui s'éteint en vol. Pour structurer
+            la réponse opérationnelle (équipage, maintenance, planification), les défaillances
+            sont réparties en trois classes selon leurs conséquences et leur visibilité.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Critère</th>
+                        <th>Classe I <span class="badge badge-red">Critique</span></th>
+                        <th>Classe II <span class="badge badge-orange">Mineure</span></th>
+                        <th>Classe III <span class="badge badge-green">Silencieuse</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Conséquences opérationnelles</strong></td>
+                        <td>OUI — impact direct sur la sécurité ou la conduite du vol</td>
+                        <td>NON</td>
+                        <td>NON</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Indication à l'équipage</strong></td>
+                        <td>OUI — affichage <em>automatique</em> sur l'ECAM</td>
+                        <td>OUI — accessible via la page STATUS de l'ECAM</td>
+                        <td>NON — invisible pour l'équipage</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Décision de dispatch</strong></td>
+                        <td>
+                            <strong>« GO »</strong> — départ autorisé sans restriction<br>
+                            <strong>« GO IF »</strong> — départ sous conditions MEL<br>
+                            <strong>« NO GO »</strong> — départ interdit
+                        </td>
+                        <td>
+                            <strong>« GO » sans condition</strong><br>
+                            Réparation à planifier :<br>
+                            · A330/A340 : sous 600 h de vol<br>
+                            · A320 : sous 10 jours
+                        </td>
+                        <td>
+                            <strong>« GO » sans condition</strong><br>
+                            Aucune échéance — réparation
+                            à la convenance de l'opérateur
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Signalement maintenance</strong></td>
+                        <td>Automatique en fin de vol<br>(CFDS sur A320 / CMS sur A330-A340)</td>
+                        <td>Automatique en fin de vol</td>
+                        <td>Sur requête uniquement via CFDS/CMS</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="highlight-box">
+            <strong>Exemple — Classe I :</strong> Un voyant de feu moteur s'allume en vol.
+            L'ECAM affiche automatiquement une alerte rouge, déclenche une alarme sonore et
+            propose la procédure d'urgence. Décision de dispatch : NO GO jusqu'à résolution complète.<br><br>
+            <strong>Exemple — Classe II :</strong> Un capteur secondaire de pression cabine tombe
+            en panne. L'avion continue de voler normalement avec le capteur principal, mais
+            l'information est consignée et visible via STATUS. La compagnie dispose de 10 jours
+            (A320) pour planifier la réparation sans immobiliser l'appareil.<br><br>
+            <strong>Exemple — Classe III :</strong> Un capteur de surveillance du niveau d'huile
+            d'un démarreur présente une dérive hors seuil. L'équipage n'en est jamais informé ;
+            c'est le technicien de maintenance qui le découvrira lors d'une requête CMS ou
+            d'une inspection programmée.
+        </div>
+
+        <!-- ── ECAM ── -->
+        <hr class="section-divider">
+        <h3>ECAM — Electronic Centralized Aircraft Monitoring</h3>
+
+        <p>
+            L'<strong>ECAM</strong> (<em>Electronic Centralized Aircraft Monitoring</em>) est
+            l'interface visuelle centrale du cockpit pour la surveillance des systèmes.
+            Il se compose de <strong>deux afficheurs</strong> placés au centre du tableau de bord,
+            entre les deux pilotes.
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>EWD — Engine Warning Display</strong>
+                <span class="badge badge-orange">Afficheur supérieur</span><br><br>
+                Surveille en permanence les réacteurs et centralise
+                <strong>toutes les alarmes et avertissements</strong> de l'avion.
+                C'est le premier afficheur consulté en cas d'anomalie — il concentre
+                l'information la plus critique sous le regard naturel des pilotes.
+            </div>
+            <div class="highlight-box">
+                <strong>SD — System Display</strong>
+                <span class="badge badge-blue">Afficheur inférieur</span><br><br>
+                Présente l'état détaillé des systèmes avion sous forme de
+                <strong>schémas synoptiques animés</strong> (moteurs, carburant, hydraulique,
+                électrique, climatisation, trains…). Affiche la page <em>Cruise</em> par défaut ;
+                bascule automatiquement sur la page pertinente en cas d'anomalie ou de
+                changement de phase.
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Analogie :</strong> L'ECAM fonctionne comme deux tableaux de bord superposés
+            dans une voiture moderne — le haut affiche la vitesse, le régime moteur et les alertes
+            critiques (équivalent EWD) ; le bas affiche la navigation et les systèmes secondaires
+            (équivalent SD). La différence : un avion surveille simultanément des centaines de
+            paramètres répartis sur une douzaine de systèmes interconnectés.
+        </div>
+
+        <!-- ── EWD ── -->
+        <hr class="section-divider">
+        <h3>EWD — Engine Warning Display</h3>
+
+        <p>
+            L'EWD évolue selon les phases de vol. Avant le démarrage des moteurs, toutes
+            les jauges affichent <strong>XX</strong> (système non initialisé). Les paramètres
+            s'animent progressivement au démarrage, puis présentent une vue enrichie avant
+            le décollage.
+        </p>
+
+        <h4>Paramètres moteurs surveillés</h4>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="EPR — Engine Pressure Ratio">
+                <p>Rapport entre la pression totale en sortie de réacteur et la pression d'entrée.
+                Indicateur principal de poussée sur les A300/A310/A330/A340.
+                Équivaut à la « position de la pédale d'accélérateur » traduite en valeur physique.</p>
+            </div>
+            <div class="compare-item neutral" data-label="EGT — Exhaust Gas Temperature">
+                <p>Température des gaz d'échappement en °C. Paramètre critique : un dépassement
+                prolongé détériore irrémédiablement les aubes turbines.
+                Valeur limite typique ≈ 950 °C au décollage — au-delà, dommages permanents.</p>
+            </div>
+            <div class="compare-item neutral" data-label="N1 — Vitesse LP (%)">
+                <p>Vitesse de rotation de la soufflante et de la turbine basse pression,
+                en % de la vitesse nominale. Paramètre de référence pour la poussée sur
+                les moteurs CFM56 de l'A320 (à la place de l'EPR).</p>
+            </div>
+            <div class="compare-item neutral" data-label="N2 — Vitesse HP (%)">
+                <p>Vitesse de rotation du compresseur haute pression. Démarre en premier lors du
+                démarrage moteur (entraîné par le démarreur pneumatique), avant que N1 ne monte
+                — permet de suivre la progression de l'allumage.</p>
+            </div>
+            <div class="compare-item neutral" data-label="FF — Fuel Flow">
+                <p>Débit de carburant consommé par chaque moteur, en lbs/h ou kg/h.
+                Permet de surveiller la consommation réelle versus le plan de vol
+                et de détecter une anomalie de combustion.</p>
+            </div>
+            <div class="compare-item neutral" data-label="FOB — Fuel On Board">
+                <p>Carburant total restant à bord, calculé par intégration des débits mesurés
+                et pesée des réservoirs. Valeur unique, centrée sur l'EWD pour
+                une lecture immédiate de la réserve disponible.</p>
+            </div>
+        </div>
+
+        <h4>Avant décollage — configuration T/O</h4>
+
+        <p>
+            Juste avant le décollage, l'EWD enrichit son affichage avec les paramètres
+            de configuration critique :
+        </p>
+
+        <ul>
+            <li>
+                <strong>Valeurs maximales acceptables d'EPR et d'EGT au décollage</strong> —
+                affichées comme index sur les cadrans. Le pilote lit directement la marge
+                disponible avant dépassement de limite, sans calcul mental.
+            </li>
+            <li>
+                <strong>Position des becs (<em>slats</em>) et volets (<em>flaps</em>)</strong> —
+                rappel visuel de la configuration aérodynamique sélectionnée
+                (ex. : FLAPS T.O. = volets en position décollage). Une configuration incorrecte
+                est l'une des causes d'accidents les plus documentées.
+            </li>
+            <li>
+                <strong>Colonne gauche :</strong> informations, avertissements et alertes
+                (ex. : AUTO BRK MAX, SIGNS ON, CABIN READY, SPLRS ARM, FLAPS T.O., T.O. CONFIG).
+                La mention <strong>T.O. CONFIG</strong> en vert signifie que toute la configuration
+                avion est validée pour le décollage.
+            </li>
+            <li>
+                <strong>Colonne droite :</strong> statuts interdisant le décollage ou l'atterrissage
+                (ex. : IGNITION active, ENG A.ICE allumé).
+            </li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>Attention :</strong> Si le message <strong>T.O. CONFIG</strong> est absent
+            ou rouge, une configuration incorrecte a été détectée (volets non sortis, freins non
+            relâchés, etc.). L'ECAM déclenche alors une alarme sonore dédiée si la manette des gaz
+            est poussée — le décollage est bloqué jusqu'à résolution.
+        </div>
+
+        <!-- ── SYSTEM DISPLAY ── -->
+        <hr class="section-divider">
+        <h3>SD — System Display : les pages synoptiques</h3>
+
+        <p>
+            Le SD peut afficher <strong>12 pages synoptiques</strong> différentes. La page
+            <em>Cruise</em> est affichée par défaut en vol normal. En cas d'anomalie ou
+            de changement de phase (taxi, approche, atterrissage), l'ECAM bascule
+            automatiquement sur la page la plus pertinente. Le pilote peut aussi sélectionner
+            manuellement n'importe quelle page via le panneau de commande ECAM.
+        </p>
+
+        <h4>Cruise — page par défaut</h4>
+
+        <p>
+            La page <em>Cruise</em> est visible pendant toutes les phases de vol normales.
+            Elle regroupe un résumé des paramètres moteurs (fuel consommé, niveau d'huile,
+            vibrations), de la pressurisation cabine (ΔP, vitesse verticale cabine, altitude cabine),
+            des températures (TAT/SAT) et de la masse avion (GW — <em>Gross Weight</em>).
+            Elle cède automatiquement sa place à la page contextuelle appropriée, par exemple
+            la check-list pendant le taxi ou la page WHEEL à l'approche.
+        </p>
+
+        <h4>Engine — paramètres moteurs détaillés</h4>
+
+        <ul>
+            <li><strong>Carburant utilisé</strong> (FUSED) par chaque moteur depuis le départ — permet de vérifier la symétrie de consommation</li>
+            <li><strong>Huile :</strong>
+                <ul>
+                    <li>Niveau normal : 5 à 7 quarts de gallon (une quantité trop faible = risque de grippage)</li>
+                    <li>Pression normale : 80 à 390 PSI</li>
+                    <li>Température : doit rester &lt; 165 °C, ou &lt; 15 minutes au-dessus de 155 °C</li>
+                </ul>
+            </li>
+            <li><strong>Démarreur :</strong> sélection A, B ou AB (deux bobines d'allumage indépendantes pour redondance)</li>
+            <li><strong>Prélèvement d'air chaud (<em>bleed</em>)</strong> sur le compresseur moteur</li>
+            <li><strong>Vibrations N1 et N2 :</strong> doit rester &lt; 6 unités — au-delà, endommagement progressif des paliers possible</li>
+        </ul>
+
+        <h4>APU — Auxiliary Power Unit</h4>
+
+        <p>
+            L'APU est un petit réacteur logé dans le cône de queue de l'avion,
+            utilisé principalement au sol pour alimenter l'avion en électricité et en air conditionné
+            <em>sans</em> démarrer les réacteurs principaux — comme un groupe électrogène portable
+            intégré. Il peut aussi servir de source de démarrage pour les moteurs principaux via
+            le prélèvement pneumatique. Sa page SD surveille :
+        </p>
+
+        <ul>
+            <li>Génération électrique : niveau de charge (%), tension générée (V), fréquence (Hz)</li>
+            <li>Vitesse de rotation N en % de la vitesse nominale</li>
+            <li>EGT — température des gaz d'échappement (surveille l'état thermique)</li>
+            <li>Prélèvement d'air chaud (<em>bleed</em>) pour la climatisation cabine au sol</li>
+        </ul>
+
+        <h4>Bleed — prélèvement d'air chaud</h4>
+
+        <p>
+            Les moteurs et l'APU prélèvent de l'air chaud et comprimé directement sur leur
+            compresseur (<em>bleed air</em>). Cet air est ensuite redistribué vers trois fonctions
+            vitales :
+        </p>
+
+        <ul>
+            <li><strong>Dégivrage (<em>Anti Ice</em>)</strong> — souffle de l'air chaud sur les bords d'attaque des ailes et les nacelles moteurs pour prévenir l'accumulation de glace</li>
+            <li><strong>Climatisation</strong> — refroidissement via les packs (échangeurs) avant distribution dans la cabine</li>
+            <li><strong>Pressurisation</strong> — maintien d'une pression cabine acceptable à haute altitude</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie :</strong> Le bleed air fonctionne comme un radiateur de voiture
+            qui capte la chaleur moteur pour chauffer l'habitacle — mais à l'échelle d'un avion,
+            cet air chaud est en plus utilisé pour fondre la glace sur les bords d'attaque
+            et maintenir la pression à bord à 11 000 m d'altitude.
+        </div>
+
+        <h4>Air Conditioning — régulation thermique de la cabine</h4>
+
+        <ul>
+            <li>
+                <strong>Régulation thermique indépendante par zone :</strong> cockpit, zone avant
+                (FWD) et zone arrière (AFT) sont contrôlés séparément. Les pilotes et les
+                passagers peuvent avoir des consignes de température différentes.
+            </li>
+            <li>
+                <strong>Détection de fumée</strong> dans les <strong>toilettes</strong> et la
+                <strong>soute</strong> — capteurs reliés directement à cette page et à une alarme
+                dédiée. La fumée en soute est particulièrement dangereuse car invisible depuis
+                la cabine.
+            </li>
+        </ul>
+
+        <h4>Pressurization — pression cabine</h4>
+
+        <p>
+            À 11 000 m d'altitude, la pression atmosphérique extérieure est inférieure à
+            25 % de la pression au niveau de la mer — incompatible avec la vie humaine.
+            L'avion maintient une pression cabine équivalente à une altitude de 6 000 à 8 000 pieds
+            (~2 000 m) grâce à des sorties d'air calibrées (<em>outflow valves</em>).
+            La page SD surveille :
+        </p>
+
+        <ul>
+            <li><strong>ΔP (differential pressure)</strong> — différence de pression entre la cabine et l'extérieur. Valeur typique ≈ 8 PSI en croisière. Limite structurale de la cellule : ≈ 9 PSI.</li>
+            <li><strong>V/S (Vertical Speed cabine)</strong> — vitesse de variation de la pression cabine. Doit rester douce pour le confort passager (max ≈ 300 ft/min) — une pressurisation trop rapide provoque des douleurs auriculaires.</li>
+            <li><strong>CAB ALT (Cabine Altitude)</strong> — altitude équivalente en cabine. Alerte automatique si supérieure à 9 550 ft.</li>
+            <li><strong>LDG ELEV (Landing Elevation)</strong> — altitude de l'aéroport de destination, programmée pour gérer la dépressurisation progressive à l'approche et éviter un écart brutal à l'atterrissage.</li>
+        </ul>
+
+        <div class="callout-danger">
+            <strong>Danger :</strong> Si la pressurisation tombe en panne et que l'altitude cabine
+            dépasse 9 550 ft, l'ECAM déclenche une alerte rouge. Les masques à oxygène tombent
+            automatiquement dans la cabine passagers (déclenchement à ~14 000 ft). L'équipage
+            doit descendre immédiatement à une altitude sûre (généralement 10 000 ft).
+        </div>
+
+        <h4>Doors / Oxygen — portes et oxygène</h4>
+
+        <ul>
+            <li>
+                <strong>Position des portes</strong> — vue en plan de l'avion avec l'état de chaque
+                ouverture : portes cabine (avant et arrière), portes de soute (cargo), issues de
+                secours au niveau des ailes (<em>overwing exits</em>). Une porte non verrouillée
+                avant décollage génère une alerte Classe I — le départ est interdit.
+            </li>
+            <li>
+                <strong>Quantité d'oxygène</strong> — pression des bouteilles alimentant les masques
+                passagers (déclenchés automatiquement) et l'oxygène crew (utilisé par les pilotes
+                lors d'une dépressurisation pour maintenir leurs capacités cognitives).
+            </li>
+        </ul>
+
+        <h4>Electrical — génération et distribution électrique</h4>
+
+        <p>
+            L'avion dispose de <strong>sources électriques multiples et isolées</strong> pour garantir
+            la continuité d'alimentation en toute circonstance :
+        </p>
+
+        <ul>
+            <li><strong>3 générateurs AC</strong> (courant alternatif 115 V / 400 Hz) : 2 entraînés mécaniquement par les moteurs, 1 par l'APU</li>
+            <li><strong>2 batteries 28 V DC</strong> : démarrage APU et alimentation de secours en cas de black-out électrique total (<em>total loss of power</em>)</li>
+            <li>
+                <strong>RAT — Ram Air Turbine</strong> : petite turbine éolienne déployable en urgence,
+                sortie dans le flux d'air si les deux moteurs s'arrêtent.
+                Elle produit une puissance électrique et hydraulique minimale pour maintenir les
+                commandes de vol essentielles — comme une dynamo de vélo intégrée à l'avion,
+                mais suffisante pour un atterrissage d'urgence.
+            </li>
+        </ul>
+
+        <p>
+            Les sources sont <strong>électriquement isolées</strong> les unes des autres pour
+            éviter la propagation des pannes. Le système bascule automatiquement sur la source
+            disponible sans intervention de l'équipage.
+        </p>
+
+        <h4>Wheel — trains d'atterrissage et freins</h4>
+
+        <ul>
+            <li><strong>État des trains</strong> (sorti / rentré / verrouillé) et des trappes associées — un train non verrouillé en configuration atterrissage déclenche une alarme sonore distincte</li>
+            <li><strong>Température des freins</strong> — monte rapidement après un refus de décollage (<em>RTO</em>) ou un atterrissage long ; des freins trop chauds peuvent provoquer un incendie roue</li>
+            <li>
+                <strong>Anti-Skid</strong> — équivalent de l'ABS automobile : empêche le blocage
+                des roues au freinage pour maintenir la directionnalité et réduire la distance
+                d'arrêt. Sans anti-skid, un freinage d'urgence sur piste mouillée provoquerait
+                un aquaplanage incontrôlable.
+            </li>
+            <li><strong>Autobrake</strong> — freinage automatique déclenché à l'atterrissage ou en cas de refus de décollage, à un niveau de décélération présélectionné</li>
+        </ul>
+
+        <h4>Hydraulic — circuits hydrauliques</h4>
+
+        <p>
+            L'avion possède <strong>3 circuits hydrauliques indépendants</strong> à 3 000 PSI
+            (vert, bleu, jaune), alimentant les surfaces de contrôle, les trains, les freins
+            et les inverseurs de poussée. La redondance est essentielle : la perte d'un circuit
+            seul ne doit jamais compromettre la manoeuvrabilité.
+        </p>
+
+        <ul>
+            <li><strong>Circuit vert</strong> — pompé mécaniquement par le moteur gauche (pompe 1)</li>
+            <li><strong>Circuit jaune</strong> — pompé par le moteur droit (pompe 2) + pompe électrique de secours</li>
+            <li><strong>Circuit bleu</strong> — alimenté uniquement par pompe électrique + RAT en urgence</li>
+            <li>
+                <strong>PTU (<em>Power Transfer Unit</em>)</strong> — transfert de puissance entre
+                circuits vert et jaune <em>sans échange de fluide</em>. Si un moteur est arrêté,
+                le PTU utilise la pression du circuit restant pour maintenir la pression de l'autre —
+                c'est le bruit caractéristique de « chien qui aboie » parfois entendu par les
+                passagers lors de la mise en route d'un seul moteur avant le décollage.
+            </li>
+        </ul>
+
+        <p class="inline-note">
+            Les pompes électriques permettent de manœuvrer certains systèmes (portes de soute,
+            spoilers) moteurs éteints — alimentées par batterie ou source externe au sol.
+        </p>
+
+        <h4>Flight Control — commandes de vol</h4>
+
+        <p>
+            La page F/CTL affiche l'état en temps réel de toutes les surfaces mobiles
+            et de leurs calculateurs (<em>ELAC</em> et <em>SEC</em> sur A320/A330) :
+        </p>
+
+        <ul>
+            <li><strong>Volets (<em>flaps</em>) et becs (<em>slats</em>)</strong> — position et symétrie gauche/droite (une asymétrie de volets est une urgence)</li>
+            <li><strong>Aérofreins (<em>spoilers</em>)</strong> — état armé ou déployé, utilisés pour ralentir en vol ou augmenter la portance négative à l'atterrissage</li>
+            <li><strong>Ailerons</strong> — déflexion gauche/droite pour le contrôle en roulis</li>
+            <li><strong>Gouvernes de profondeur (<em>elevators</em>) et de direction (<em>rudder</em>)</strong></li>
+            <li>
+                <strong>Source hydraulique de chaque surface</strong> — chaque actionneur indique
+                quel circuit (vert/bleu/jaune) l'alimente. En cas de panne hydraulique,
+                cette page permet d'évaluer immédiatement quelles surfaces restent disponibles
+                et quelle manoeuvrabilité résiduelle l'avion conserve.
+            </li>
+        </ul>
+
+        <h4>Fuel — gestion du carburant</h4>
+
+        <ul>
+            <li>
+                <strong>Architecture des réservoirs</strong> : 3 réservoirs principaux (central + gauche + droit).
+                Capacité typique : ≈ 18 500 kg sur A320, ≈ 97 000 kg sur A330 avec réservoirs
+                supplémentaires dans les plans.
+            </li>
+            <li><strong>Fuel Used (FUSED)</strong> par moteur depuis le départ — comparaison avec le plan de vol pour détecter une surconsommation</li>
+            <li>
+                <strong>Transfert de carburant</strong> entre réservoirs — équilibrage automatique
+                pour maintenir le centrage avion. Un déséquilibre de carburant décale le centre
+                de gravité latéralement, ce qui induit un roulis parasite et détériore les
+                performances.
+            </li>
+            <li><strong>État des vannes et pompes</strong> — chaque réservoir dispose de ses propres pompes de gavage et vannes d'isolation pour compartimenter les pannes et éviter toute fuite généralisée</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Info — A330 :</strong> L'A330 est équipé d'un réservoir de trim dans le plan
+            horizontal arrière (<em>horizontal stabilizer trim tank</em>). Le transfert de carburant
+            vers ce réservoir permet de déplacer le centre de gravité vers l'arrière en croisière,
+            réduisant la traînée aérodynamique de 1 à 2 % — une économie de carburant significative
+            sur un vol long-courrier.
+        </div>
+
+        <p class="source">Cours Systèmes Avioniques — ISAE ENSMA 2025/2026, diapositives 60–79</p>
+
+    </div>
+
+</body>
+</html>

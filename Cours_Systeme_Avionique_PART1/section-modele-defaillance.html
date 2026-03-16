@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Modèle de défaillance — Analyse de panne des systèmes avioniques</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Trois anomalies à distinguer</strong> — La <em>défaillance</em> est l'événement (le moteur s'arrête en vol), la <em>panne</em> est l'état constaté (moteur trouvé HS à la visite), le <em>défaut</em> est un écart hors tolérance sans cessation totale. En avionique, on modélise tout composant par deux états : $C(t)$ (correct) ou $F(t)$ (fautif), sans retour automatique vers $C$.</li>
+            <li><strong>Loi exponentielle et taux $\lambda$ constant</strong> — Les composants avioniques ne vieillissent pas notablement durant leur vie certifiée, ce qui rend $\lambda$ quasi-constant. La probabilité de correct suit alors $P_C(t) = P_{C_0} \cdot e^{-\lambda t}$. Pour une mission d'une heure, $\lambda \cdot t \ll 1$, ce qui simplifie les calculs : $P_F(t) \approx \lambda \cdot t$.</li>
+            <li><strong>Ordres de grandeur à retenir</strong> — $\lambda \approx 10^{-4}\ \text{h}^{-1}$ pour un calculateur avionique, $10^{-5}$ à $10^{-6}\ \text{h}^{-1}$ pour un capteur. Sur un vol d'une heure et avec $P_{C_0}=1$, la probabilité de panne d'un calculateur est $\approx 10^{-4}$ — soit 1 calculateur sur 10 000 en panne par heure de vol.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ── ANOMALIES FONCTIONNELLES ── -->
+        <hr class="section-divider">
+        <h3>Anomalies fonctionnelles — défaillance, défaut, panne</h3>
+
+        <p>
+            Avant de construire un modèle quantitatif, il faut disposer d'un vocabulaire précis.
+            En fiabilité aéronautique, trois termes distincts décrivent des situations différentes,
+            et les confondre conduit à des erreurs d'analyse. La norme IEC 60050-191 les définit
+            formellement.
+        </p>
+
+        <h4>Défaillance — <em>failure</em></h4>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> La <strong>défaillance</strong> (<em>failure</em>) d'une
+            entité est la <em>cessation de son aptitude à accomplir une fonction requise</em>.
+            C'est un <strong>événement</strong> qui survient au cours du fonctionnement — le passage
+            brusque ou progressif d'un état capable à un état incapable.
+        </div>
+
+        <p>
+            Analogie concrète : un calculateur de commandes de vol fonctionne normalement depuis le
+            décollage. À $t = 2\ \text{h}\ 14$, un composant interne grille sous l'effet d'un
+            transitoire électromagnétique. À cet instant précis, il y a <strong>défaillance</strong> :
+            le calculateur cesse d'accomplir sa fonction. C'est un événement daté.
+        </p>
+
+        <h4>Panne — <em>fault</em></h4>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> La <strong>panne</strong> (<em>fault</em>) d'une entité est
+            son <em>inaptitude à accomplir une fonction requise</em>. C'est un <strong>état</strong>
+            constaté, indépendamment du moment où il s'est installé.
+        </div>
+
+        <p>
+            Même exemple : lors de la visite de maintenance post-vol, le technicien constate que le
+            calculateur ne répond plus. Il est en <strong>panne</strong>. La panne était peut-être
+            présente depuis 2 h 14, mais c'est maintenant qu'elle est <em>constatée comme état</em>.
+        </p>
+
+        <div class="callout-info">
+            <strong>Distinction clé — événement vs état :</strong> La défaillance est un événement
+            survenant <em>au cours du fonctionnement</em> ; la panne est un état <em>constaté</em>,
+            souvent lors d'une maintenance ou d'un test. Un composant peut être en panne sans qu'une
+            défaillance en vol ait jamais été détectée — par exemple, si le défaut existait avant le
+            vol (panne latente). C'est précisément la distinction entre $\dot{P}_F(t)$ (taux
+            d'apparition de nouvelles défaillances) et $P_F(t)$ (probabilité d'être en état de panne).
+        </div>
+
+        <h4>Défaut — <em>defect</em></h4>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> Le <strong>défaut</strong> (<em>defect</em>) d'une entité
+            est l'<em>écart entre une caractéristique de l'entité et la caractéristique requise,
+            dépassant une limite admissible</em>. Le composant fonctionne encore, mais en dehors
+            de ses spécifications — fonctionnement <em>non nominal</em>.
+        </div>
+
+        <p>
+            Exemple : un capteur de pression statique devrait mesurer à ± 0,5 hPa. Il indique
+            désormais des valeurs décalées de 2 hPa. Il <em>fonctionne</em> (il produit un signal),
+            mais hors tolérance — c'est un <strong>défaut</strong>. Il n'est ni en panne totale, ni
+            correct. Si cet écart dépasse le seuil admissible, le défaut peut conduire à une
+            défaillance du système alimenté par ce capteur.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="Défaillance — failure">
+                <p>Cessation totale de la fonction.<br>
+                <strong>Événement</strong> survenant en fonctionnement.<br>
+                Exemple : capteur qui ne produit plus aucun signal.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Défaut — defect">
+                <p>Fonctionnement hors spécification.<br>
+                <strong>Écart</strong> hors tolérance, pas d'arrêt total.<br>
+                Exemple : capteur décalé de 2 hPa au lieu de ± 0,5 hPa.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Panne — fault">
+                <p>Inaptitude à accomplir la fonction.<br>
+                <strong>État</strong> constaté (souvent lors d'une maintenance).<br>
+                Exemple : calculateur trouvé HS à la visite post-vol.</p>
+            </div>
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slide 97</p>
+        <p class="source">IEC 60050-191 — Vocabulaire électrotechnique international : Sûreté de fonctionnement</p>
+
+
+        <!-- ── MODÈLE D'ÉTAT ── -->
+        <hr class="section-divider">
+        <h3>Modèle d'état d'un composant</h3>
+
+        <p>
+            Pour quantifier la probabilité de défaillance, il faut d'abord formaliser l'état d'un
+            composant. Le modèle retenu est volontairement simple : à tout instant $t$, un composant
+            se trouve dans l'un de deux états exclusifs.
+        </p>
+
+        <div class="key-value">
+            <dt>$C(t)$</dt><dd>Le composant est <strong>correct</strong> à l'instant $t$ — il accomplit sa fonction requise.</dd>
+            <dt>$F(t)$</dt><dd>Le composant est <strong>défaillant</strong> à l'instant $t$ — il n'accomplit plus sa fonction.</dd>
+        </div>
+
+        <h4>Hypothèse d'irréparabilité automatique</h4>
+
+        <p>
+            On part du principe qu'<strong>un composant ne se répare pas automatiquement</strong> :
+            une fois passé dans l'état $F(t)$, il ne peut revenir à l'état $C(t)$ que par une
+            intervention humaine de maintenance — et dans le modèle de vol, cette maintenance n'a
+            pas lieu. Le comportement du composant se décrit donc par un automate à un seul sens :
+        </p>
+
+        <div class="figure-box">
+            <div style="display:flex; align-items:center; justify-content:center; gap:3rem; padding:1rem 0; font-size:1.1rem;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                    <div style="width:80px; height:80px; border-radius:50%; border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-style:italic; font-size:1.2rem;">$C(t)$</div>
+                    <span style="font-size:0.82rem; color:var(--text-secondary);">Composant correct</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.3rem;">
+                    <div style="font-size:0.78rem; color:var(--text-secondary); font-style:italic;">Transition validée<br>par une défaillance</div>
+                    <div style="font-size:1.8rem; color:var(--accent);">↓</div>
+                    <div style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\lambda(t)$</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                    <div style="width:80px; height:80px; border-radius:50%; border:2px solid rgba(248,113,113,0.6); display:flex; align-items:center; justify-content:center; font-style:italic; font-size:1.2rem;">$F(t)$</div>
+                    <span style="font-size:0.82rem; color:var(--text-secondary);">Composant fautif</span>
+                </div>
+            </div>
+            <figcaption>Fig. 1 — Automate d'état d'un composant : transition irréversible $C \to F$ lors d'une défaillance. Le retour $F \to C$ n'existe pas sans maintenance.</figcaption>
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie radioactivité :</strong> Ce modèle est formellement identique à la
+            désintégration radioactive — un noyau instable passe irréversiblement à un état stable
+            fils, sans possibilité de retour. De même, un composant avionique en vol transite
+            irréversiblement de « correct » à « défaillant ». C'est précisément pourquoi la solution
+            mathématique sera une <em>exponentielle décroissante</em>, comme la loi de
+            désintégration radioactive.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slide 98</p>
+
+
+        <!-- ── MODÈLE PROBABILISTE ── -->
+        <hr class="section-divider">
+        <h3>Construction du modèle probabiliste</h3>
+
+        <p>
+            Pour passer d'un modèle déterministe (état d'un composant individuel) à un modèle
+            probabiliste (probabilité qu'un composant soit en état correct), on adopte une approche
+            fréquentiste sur une population de $N$ composants identiques.
+        </p>
+
+        <h4>Population de composants — définitions</h4>
+
+        <p>
+            On considère $N$ composants identiques, tous installés à bord d'appareils et tous
+            corrects à $t = 0$. À tout instant $t$ après installation :
+        </p>
+
+        <ul>
+            <li>$N_C(t)$ — nombre de composants dans l'état $C(t)$ (corrects)</li>
+            <li>$N_F(t)$ — nombre de composants dans l'état $F(t)$ (fautifs)</li>
+        </ul>
+
+        <p>
+            Puisque chaque composant est soit correct, soit défaillant — et jamais les deux à la
+            fois — on a à tout instant :
+        </p>
+
+        <div class="formula-box">
+            $$N_C(t) + N_F(t) = N$$
+            <span class="formula-label">Conservation du nombre total de composants — Équation (1)</span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Exemple numérique :</strong> Airbus suit 1 000 calculateurs avioniques identiques
+            installés sur une flotte. À $t = 500\ \text{h}$, supposons que 997 sont encore corrects
+            et 3 sont tombés en panne. Alors $N_C(500) = 997$, $N_F(500) = 3$, et
+            $N_C + N_F = 1000 = N$. La conservation est triviale mais fondamentale : aucun composant
+            ne disparaît, il change seulement d'état.
+        </div>
+
+        <h4>Interprétation probabiliste — loi des grands nombres</h4>
+
+        <p>
+            Pour de grandes valeurs de $N$, la proportion de composants dans chaque état converge
+            vers la probabilité qu'un composant individuel (pris au hasard) soit dans cet état.
+            C'est l'interprétation fréquentiste de la probabilité :
+        </p>
+
+        <div class="formula-box">
+            $$P_C(t) \equiv \frac{N_C(t)}{N} \quad \text{pour de grandes valeurs de } N$$
+            <span class="formula-label">Probabilité qu'un composant soit correct à l'instant $t$ — Équation (2)</span>
+        </div>
+
+        <div class="formula-box">
+            $$P_F(t) \equiv \frac{N_F(t)}{N} \quad \text{pour de grandes valeurs de } N$$
+            <span class="formula-label">Probabilité qu'un composant soit défaillant à l'instant $t$ — Équation (3)</span>
+        </div>
+
+        <p>
+            De (1), (2) et (3), on déduit immédiatement la relation de normalisation, qui traduit
+            simplement le fait qu'un composant est soit correct, soit défaillant :
+        </p>
+
+        <div class="formula-box">
+            $$P_C(t) + P_F(t) = \frac{N_C(t)}{N} + \frac{N_F(t)}{N} = 1$$
+            <span class="formula-label">Normalisation des probabilités — Équation (4)</span>
+        </div>
+
+        <div class="tip-box">
+            <strong>Lecture physique :</strong> Sur les 1 000 calculateurs de l'exemple, à
+            $t = 500\ \text{h}$ : $P_C(500) = 997/1000 = 0{,}997$ et $P_F(500) = 3/1000 = 0{,}003$.
+            Si on prend un calculateur au hasard dans la flotte, il y a 99,7 % de chances qu'il soit
+            encore correct à $t = 500\ \text{h}$. C'est exactement le sens de $P_C(t)$.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 99–100</p>
+
+
+        <!-- ── TAUX DE DÉFAILLANCE ── -->
+        <hr class="section-divider">
+        <h3>Taux de défaillance $\lambda$ — dérivation</h3>
+
+        <p>
+            Le modèle d'état ne dit pas <em>à quelle vitesse</em> les composants basculent de
+            $C$ vers $F$. C'est le rôle du <strong>taux de défaillance</strong> $\lambda(t)$.
+        </p>
+
+        <h4>Nombre de défaillances sur un intervalle</h4>
+
+        <p>
+            On note $\Delta N_F(i\Delta t)$ le nombre de composants qui défaillent dans l'intervalle
+            $[i\Delta t,\ (i+1)\Delta t[$. Puisqu'aucun composant ne se répare, c'est simplement la
+            diminution du nombre de corrects :
+        </p>
+
+        <div class="formula-box">
+            $$\Delta N_F(i\Delta t) = N_C(i\Delta t) - N_C\bigl((i+1)\Delta t\bigr)$$
+            <span class="formula-label">Nombre de défaillances dans l'intervalle $i$</span>
+        </div>
+
+        <p>
+            La courbe $N_C(t)$ est donc décroissante : elle part de $N$ à $t=0$ et tend vers 0
+            à long terme. Chaque «&nbsp;marche&nbsp;» descendante correspond à un groupe de composants
+            qui viennent de défaillir.
+        </p>
+
+        <h4>Définition du taux de défaillance $\lambda$</h4>
+
+        <p>
+            Pour un petit intervalle $\Delta t$, on modélise le nombre de défaillances comme
+            proportionnel au nombre de composants encore corrects <em>et</em> à la durée $\Delta t$ :
+        </p>
+
+        <div class="formula-box">
+            $$\Delta N_F(i\Delta t) = \lambda(i\Delta t) \cdot N_C(i\Delta t) \cdot \Delta t$$
+            <span class="formula-label">Définition du taux de défaillance $\lambda$ — Équation (5)</span>
+        </div>
+
+        <p>
+            Physiquement, $\lambda(t)$ est le taux instantané auquel les composants corrects
+            deviennent défaillants — analogue à un taux de désintégration radioactive.
+            <strong>Plus il y a de composants corrects, plus il y a de défaillances absolues
+            par unité de temps</strong> — mais le taux $\lambda$ est une propriété intrinsèque du
+            composant, indépendante du nombre.
+        </p>
+
+        <div class="tip-box">
+            <strong>Analogie population :</strong> Imaginez une population de 10 000 ampoules
+            identiques allumées en continu. Si le taux de grillage est $\lambda = 0{,}001\ \text{h}^{-1}$,
+            alors en une heure, on s'attend à ce que $0{,}001 \times N_C(t)$ ampoules grillent.
+            Plus il reste d'ampoules allumées, plus il en grillera en valeur absolue — mais la
+            <em>fraction</em> qui grille par heure reste constante à $\lambda$.
+        </div>
+
+        <h4>Construction de $P_F(t)$ par passage à la limite</h4>
+
+        <p>
+            En accumulant les défaillances depuis $t=0$ (où tous les composants sont corrects) :
+        </p>
+
+        <div class="formula-box">
+            $$N_F\bigl((i+1)\Delta t\bigr) = \sum_{m=0}^{i} \Delta N_F(m\Delta t) = \sum_{m=0}^{i} \lambda(m\Delta t) \cdot N_C(m\Delta t) \cdot \Delta t \tag{6–7}$$
+            <span class="formula-label">Cumul des défaillances</span>
+        </div>
+
+        <p>
+            En divisant par $N$ et en identifiant $N_C/N = P_C$ et $N_F/N = P_F$ :
+        </p>
+
+        <div class="formula-box">
+            $$P_F\bigl((i+1)\Delta t\bigr) = \sum_{m=0}^{i} \lambda(m\Delta t) \cdot P_C(m\Delta t) \cdot \Delta t \tag{8–9}$$
+            <span class="formula-label">Cumul en termes probabilistes</span>
+        </div>
+
+        <p>
+            En passant à la limite $\Delta t \to 0$, la somme de Riemann devient une intégrale,
+            et l'équation différentielle qui gouverne $P_F$ s'écrit :
+        </p>
+
+        <div class="formula-box">
+            $$P_F(t) = \int_0^t \lambda(\tau)\, P_C(\tau)\, d\tau \tag{11}$$
+            <span class="formula-label">Expression intégrale de la probabilité de défaillance</span>
+        </div>
+
+        <div class="formula-box">
+            $$\dot{P}_F(t) = \lambda(t)\, P_C(t) \tag{12}$$
+            <span class="formula-label">Équation différentielle du taux d'apparition de défaillances</span>
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 101–102</p>
+
+
+        <!-- ── RÉSULTATS FONDAMENTAUX ── -->
+        <hr class="section-divider">
+        <h3>Résultats fondamentaux — équations différentielles et solution générale</h3>
+
+        <h4>Équations couplées</h4>
+
+        <p>
+            Comme $P_F + P_C = 1$, on a $\dot{P}_F = -\dot{P}_C$. En combinant avec l'équation (12) :
+        </p>
+
+        <div class="two-col">
+            <div class="theorem-box" data-label="Équation (14a)">
+                $$\dot{P}_F(t) = \lambda(t)\,P_C(t)$$
+                <p style="margin-top:0.75rem; font-size:0.9rem;">La probabilité de défaillance <em>croît</em> au taux $\lambda$ fois la probabilité d'être encore correct.</p>
+            </div>
+            <div class="theorem-box" data-label="Équation (14b)">
+                $$\dot{P}_C(t) = -\lambda(t)\,P_C(t)$$
+                <p style="margin-top:0.75rem; font-size:0.9rem;">La probabilité d'être correct <em>décroît</em> au même taux — les deux s'équilibrent : $\dot{P}_F = -\dot{P}_C$.</p>
+            </div>
+        </div>
+
+        <h4>Résolution de l'équation différentielle</h4>
+
+        <p>
+            L'équation $\dot{P}_C = -\lambda(t)\,P_C$ est une EDO linéaire du premier ordre à
+            variables séparables. On la résout par séparation :
+        </p>
+
+        <div class="proof-box">
+            $\frac{dP_C}{P_C} = -\lambda(t)\,dt$ — on intègre les deux membres :
+            $\ln P_C(t) = -\int \lambda(t)\,dt + \text{const}$, soit
+            $P_C(t) = c \cdot e^{-\int \lambda(t)\,dt}$.
+            En appliquant la condition initiale $P_C(0) = P_{C_0}$, la constante
+            d'intégration vaut $c = P_{C_0}$.
+        </div>
+
+        <div class="formula-box">
+            $$P_C(t) = P_{C_0} \cdot e^{-\int_0^t \lambda(\tau)\,d\tau} \tag{17a}$$
+            <span class="formula-label">Solution générale — $\lambda$ quelconque</span>
+        </div>
+
+        <div class="formula-box">
+            $$P_F(t) = 1 - P_{C_0} \cdot e^{-\int_0^t \lambda(\tau)\,d\tau} \tag{17b}$$
+            <span class="formula-label">Probabilité de défaillance — solution générale</span>
+        </div>
+
+        <h4>Cas $\lambda$ constant — résultat clé</h4>
+
+        <p>
+            Lorsque $\lambda$ est constant (indépendant du temps), l'intégrale se simplifie en
+            $\lambda t$, et on obtient la <strong>loi exponentielle</strong> :
+        </p>
+
+        <div class="two-col">
+            <div class="formula-box">
+                $$P_C(t) = P_{C_0} \cdot e^{-\lambda t} \tag{18a}$$
+                <span class="formula-label">Probabilité d'être correct — loi exponentielle</span>
+            </div>
+            <div class="formula-box">
+                $$P_F(t) = 1 - P_{C_0} \cdot e^{-\lambda t} \tag{18b}$$
+                <span class="formula-label">Probabilité de défaillance</span>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Lecture graphique :</strong> $P_C(t)$ est une exponentielle décroissante,
+            partant de $P_{C_0}$ à $t=0$ et tendant vers 0. $P_F(t)$ est son complémentaire :
+            elle part de $1 - P_{C_0}$ et tend vers 1. Les deux courbes se croisent quand
+            $P_C = P_F = 0{,}5$, c'est-à-dire à $t^* = \frac{\ln(2)}{\lambda} + \frac{\ln P_{C_0}}{\lambda}$
+            — pour $P_{C_0}=1$, ce point vaut $t^* = \ln 2 / \lambda \approx 0{,}693 / \lambda$.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 103–104</p>
+
+
+        <!-- ── COMPOSANTS AVIONIQUES ── -->
+        <hr class="section-divider">
+        <h3>Propriétés des composants avioniques — pourquoi $\lambda$ est constant</h3>
+
+        <p>
+            Le résultat général (17a) est valable pour tout profil de $\lambda(t)$. Mais en
+            aéronautique, une propriété physique remarquable simplifie considérablement les choses.
+        </p>
+
+        <h4>Absence d'usure et de vieillissement notable</h4>
+
+        <p>
+            Les composants destinés à l'aéronautique sont certifiés pour une durée de vie
+            déterminée (par exemple 20 000 heures pour un calculateur avionique). Durant cette
+            durée prévue à bord d'un avion, ils ne souffrent :
+        </p>
+
+        <ul>
+            <li>d'<strong>aucun phénomène d'usure notable</strong> — les composants électroniques
+            n'ont pas de pièces frottantes ; les connecteurs sont dimensionnés pour des milliers
+            de cycles d'insertion.</li>
+            <li>d'<strong>aucun phénomène de vieillissement notable</strong> — les matériaux sont
+            sélectionnés pour résister aux contraintes thermiques et vibratoires sans dégradation
+            significative sur la durée certifiée.</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Courbe en baignoire :</strong> La durée de vie des composants électroniques
+            suit classiquement une courbe en baignoire : mortalité infantile élevée (composants
+            défectueux à la fabrication, éliminés lors des tests de rodage), puis phase de vie
+            utile à taux constant, puis vieillissement en fin de vie. Les composants avioniques
+            sont installés à bord uniquement pendant la phase utile — la mortalité infantile a été
+            éliminée par les tests d'acceptance, et la durée de vie certifiée ne couvre pas la
+            phase de vieillissement. On se retrouve ainsi dans la portion plate de la courbe,
+            où $\lambda \approx \text{const}$.
+        </div>
+
+        <p>
+            Conséquence directe : <strong>$\lambda$ est à peu près constant pour ces systèmes</strong>,
+            et on applique la loi exponentielle (18a)/(18b).
+        </p>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slide 105</p>
+
+
+        <!-- ── VALEURS TYPIQUES ET APPROXIMATION ── -->
+        <hr class="section-divider">
+        <h3>Valeurs typiques de $\lambda$ et approximation avionique</h3>
+
+        <h4>Ordres de grandeur</h4>
+
+        <p>
+            Les valeurs de taux de défaillance des composants avioniques s'échelonnent sur plusieurs
+            décades. Toutes sont très petites devant 1, ce qui va permettre une simplification
+            importante.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Composant</th>
+                        <th>$\lambda$ typique $[\text{h}^{-1}]$</th>
+                        <th>Interprétation concrète</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Calculateur avionique</strong></td>
+                        <td>$\approx 10^{-4}$</td>
+                        <td>1 défaillance attendue pour 10 000 h de vol — soit ~417 jours de vol ininterrompu</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Actionneur / moteur électrique</strong></td>
+                        <td>$\approx 10^{-4}$ à $10^{-5}$</td>
+                        <td>Entre 10 000 h et 100 000 h entre défaillances</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Capteur simple</strong></td>
+                        <td>$\approx 10^{-5}$ à $10^{-6}$</td>
+                        <td>Entre 100 000 h et 1 million d'heures entre défaillances</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rupture d'élément de structure</strong></td>
+                        <td>$\approx 10^{-7}$</td>
+                        <td>1 rupture attendue pour 10 millions d'heures — toute la flotte mondiale combinée</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tip-box">
+            <strong>Comment lire un $\lambda$ :</strong> Un taux $\lambda = 10^{-4}\ \text{h}^{-1}$
+            signifie que, si on surveille $N$ composants identiques, la fraction qui défaille par
+            heure est $10^{-4}$ — soit 1 sur 10 000. Sur une flotte de 1 000 appareils équipés
+            chacun du même calculateur, on s'attend à $1000 \times 10^{-4} = 0{,}1$ défaillance
+            par heure, soit <em>une défaillance toutes les 10 heures de vol de flotte</em>.
+        </div>
+
+        <h4>Hypothèse de mission : $\lambda \cdot t \ll 1$</h4>
+
+        <p>
+            En avionique, on calcule généralement les probabilités de défaillance pour une
+            <strong>mission d'une heure</strong> (durée normalisée, $0 \leq t \leq 1$). Avec
+            $\lambda \leq 10^{-4}\ \text{h}^{-1}$ :
+        </p>
+
+        <div class="formula-box">
+            $$0 \leq t \leq 1\ \text{h} \implies \lambda \cdot t \leq 10^{-4} \ll 1$$
+            <span class="formula-label">Hypothèse avionique fondamentale</span>
+        </div>
+
+        <p>
+            Sous cette hypothèse, on peut utiliser le développement limité $e^{-x} \approx 1 - x$
+            pour $x \ll 1$, ce qui simplifie considérablement l'expression de $P_C$ :
+        </p>
+
+        <div class="formula-box">
+            $$P_C(t) = P_{C_0} \cdot e^{-\lambda t} \approx P_{C_0}(1 - \lambda t) \approx P_{C_0} \tag{19}$$
+            <span class="formula-label">Approximation avionique — $\lambda t \ll 1$</span>
+        </div>
+
+        <p>
+            <strong>Conséquence majeure :</strong> Puisque $P_C(t) \approx P_{C_0}$ reste quasi-constant
+            au cours de la mission, la machine à états est <em>très peu évolutive</em> : les
+            défaillances n'affectent quasiment pas $P_C(t)$ — qui reste à peu près égale à sa valeur
+            initiale. L'équation différentielle se simplifie :
+        </p>
+
+        <div class="formula-box">
+            $$\dot{P}_F(t) = \lambda \cdot P_C(t) \approx \lambda \cdot P_{C_0}$$
+            <span class="formula-label">Taux de défaillance approximatif — constant sous l'hypothèse $\lambda t \ll 1$</span>
+        </div>
+
+        <p>
+            Et par intégration directe, en posant $P_{F_0} = 1 - P_{C_0}$ :
+        </p>
+
+        <div class="formula-box">
+            $$P_F(t) = \lambda \cdot P_{C_0} \cdot t + P_{F_0}$$
+            <span class="formula-label">Probabilité de défaillance — approximation linéaire</span>
+        </div>
+
+        <p>
+            Dans le cas particulier où <strong>tous les composants sont corrects à $t=0$</strong>
+            (c'est-à-dire $P_{C_0} = 1$, $P_{F_0} = 0$) :
+        </p>
+
+        <div class="formula-box">
+            $$\boxed{P_F(t) = \lambda \cdot t}$$
+            <span class="formula-label">Résultat fondamental avionique — $\lambda t \ll 1$ et $P_{C_0}=1$</span>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Attention aux conditions de validité :</strong> L'approximation $P_F(t) \approx \lambda t$
+            n'est valide que si <em>simultanément</em> : (1) $\lambda t \ll 1$, et (2) $P_{C_0} \approx 1$.
+            Si des composants défectueux sont présents dès $t=0$ (par exemple 5 % de calculateurs
+            non testés avant le vol), alors $P_{C_0} = 0{,}95 \neq 1$ et la formule simplifiée
+            n'est plus exacte — il faut garder $P_{F_0} = 0{,}05$ dans l'expression.
+        </div>
+
+        <h4>Tableau récapitulatif — solution générale vs approximation</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Solution générale ($\lambda$ constant)</th>
+                        <th>Approximation $\lambda \cdot t \ll 1$</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>$\dot{P}_C(t)$</strong></td>
+                        <td>$= -\lambda \cdot P_C(t)$</td>
+                        <td>$\approx 0$ — $P_C$ quasi-constant</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$P_C(t)$</strong></td>
+                        <td>$= P_{C_0} \cdot e^{-\lambda t}$</td>
+                        <td>$\approx P_{C_0}$</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$\dot{P}_F(t)$</strong></td>
+                        <td>$= \lambda \cdot P_C(t)$</td>
+                        <td>$\approx \lambda \cdot P_{C_0}$ (constant)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$P_F(t)$</strong></td>
+                        <td>$= 1 - P_{C_0} \cdot e^{-\lambda t}$</td>
+                        <td>$\approx \lambda \cdot P_{C_0} \cdot t + P_{F_0}$</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 106–108</p>
+
+
+        <!-- ── EXERCICES ── -->
+        <hr class="section-divider">
+        <h3>Exercices — application numérique</h3>
+
+        <h4>Exercice 1 — Probabilité de panne d'un calculateur sur 1 heure</h4>
+
+        <div class="highlight-box">
+            <strong>Énoncé :</strong> Exprimer la probabilité de panne d'un calculateur avionique
+            pendant un vol d'une durée d'une heure. On suppose qu'à l'instant $t = 0$, tous les
+            calculateurs sont corrects.
+        </div>
+
+        <p><strong>Données :</strong></p>
+        <dl class="key-value">
+            <dt>Taux de défaillance du calculateur</dt><dd>$\lambda \approx 10^{-4}\ \text{h}^{-1}$</dd>
+            <dt>Durée de la mission</dt><dd>$t = 1\ \text{h}$</dd>
+            <dt>Condition initiale</dt><dd>$P_{C_0} = 1$ (tous les calculateurs sont corrects à $t=0$)</dd>
+        </dl>
+
+        <p><strong>Vérification de la validité de l'approximation :</strong></p>
+
+        <p>
+            On calcule $\lambda \cdot t = 10^{-4} \times 1 = 10^{-4} \ll 1$ ✓.
+            L'approximation avionique est bien applicable.
+        </p>
+
+        <p><strong>Résolution :</strong></p>
+
+        <ul class="steps">
+            <li>L'approximation $\lambda t \ll 1$ est vérifiée : $\lambda t = 10^{-4}$.</li>
+            <li>Avec $P_{C_0} = 1$, on applique la formule simplifiée : $P_F(t) = \lambda \cdot t$.</li>
+            <li>Application numérique : $P_F(1) = 10^{-4} \times 1 = 10^{-4}$.</li>
+        </ul>
+
+        <div class="formula-box">
+            $$P_F(t = 1\ \text{h}) = \lambda \cdot t = 10^{-4} \times 1 = 10^{-4}$$
+            <span class="formula-label">Probabilité de panne du calculateur sur 1 heure de vol</span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Interprétation :</strong> $P_F = 10^{-4}$ signifie qu'en moyenne, 1 calculateur
+            sur 10 000 tombera en panne lors d'un vol d'une heure. Pour une compagnie opérant
+            1 000 vols par jour, cela représente environ $1000 \times 10^{-4} = 0{,}1$ panne de
+            calculateur par jour — soit une panne tous les 10 jours d'exploitation sur la flotte.
+            Ce chiffre illustre pourquoi la redondance est indispensable : un calculateur unique
+            serait insuffisant pour atteindre $P_F < 10^{-9}$/h requis pour les fonctions
+            catastrophiques.
+        </div>
+
+        <p class="inline-note">
+            Vérification avec la formule exacte : $P_F = 1 - e^{-10^{-4}} \approx 1 - (1 - 10^{-4}) = 10^{-4}$.
+            L'approximation est parfaite à cet ordre de grandeur.
+        </p>
+
+        <h4>Exercice 2 — Durée avant 5 % de défaillances (calculateurs simplex)</h4>
+
+        <div class="highlight-box">
+            <strong>Énoncé :</strong> Les calculateurs simplex ne disposent pas de dispositif de
+            détection d'erreur. Quelle durée $\tau$ doit-on attendre pour que 5 % de l'ensemble
+            des calculateurs embarqués soient défaillants ? On suppose $P_{C_0} = 1$.
+        </div>
+
+        <p><strong>Données :</strong></p>
+        <dl class="key-value">
+            <dt>Taux de défaillance</dt><dd>$\lambda \approx 10^{-4}\ \text{h}^{-1}$</dd>
+            <dt>Condition initiale</dt><dd>$P_{C_0} = 1$</dd>
+            <dt>Objectif</dt><dd>$P_F(\tau) = 0{,}05$</dd>
+        </dl>
+
+        <p><strong>Résolution exacte :</strong></p>
+
+        <ul class="steps">
+            <li>On part de la formule exacte : $P_F(\tau) = 1 - e^{-\lambda \tau} = 0{,}05$.</li>
+            <li>On isole l'exponentielle : $e^{-\lambda \tau} = 0{,}95$.</li>
+            <li>On prend le logarithme : $-\lambda \tau = \ln(0{,}95)$, soit $\tau = -\frac{\ln(0{,}95)}{\lambda}$.</li>
+            <li>Application numérique : $\tau = \frac{-(-0{,}05129)}{10^{-4}} \approx \frac{0{,}05129}{10^{-4}} \approx 513\ \text{h}$.</li>
+        </ul>
+
+        <div class="formula-box">
+            $$\tau = -\frac{\ln(0{,}95)}{\lambda} = \frac{0{,}05129}{10^{-4}} \approx \mathbf{513\ \text{h}}$$
+            <span class="formula-label">Durée pour atteindre 5 % de défaillances — formule exacte</span>
+        </div>
+
+        <p><strong>Comparaison avec l'approximation :</strong></p>
+
+        <p>
+            Avec l'approximation $P_F(\tau) \approx \lambda \tau$ : $\tau \approx 0{,}05 / 10^{-4} = 500\ \text{h}$.
+            L'approximation donne 500 h, la valeur exacte est 513 h — soit un écart de 2,6 %.
+        </p>
+
+        <div class="callout-warning">
+            <strong>Limite de l'approximation :</strong> Ici $\lambda \tau = 10^{-4} \times 513 \approx 0{,}05$,
+            qui n'est plus négligeable devant 1. L'approximation linéaire sous-estime légèrement la
+            durée réelle. À $\tau = 513\ \text{h}$, environ 21 jours de fonctionnement continu
+            auront abouti à 5 % de défaillances — illustrant la haute fiabilité intrinsèque des
+            composants avioniques individuels.
+        </div>
+
+        <h4>Exercice 3 — Effet d'une population initiale partiellement défectueuse</h4>
+
+        <div class="highlight-box">
+            <strong>Énoncé :</strong> Supposons qu'à bord d'un avion, 5 % des calculateurs sont
+            défectueux par manque de détection d'erreur avant le décollage. Dans ces conditions,
+            déterminer la probabilité d'une défaillance d'un calculateur durant une mission d'une heure.
+        </div>
+
+        <p><strong>Données :</strong></p>
+        <dl class="key-value">
+            <dt>Taux de défaillance</dt><dd>$\lambda \approx 10^{-4}\ \text{h}^{-1}$</dd>
+            <dt>Condition initiale</dt><dd>$P_{C_0} = 0{,}95$ — 5 % déjà défaillants au décollage</dd>
+            <dt>Durée de la mission</dt><dd>$t = 1\ \text{h}$</dd>
+        </dl>
+
+        <p><strong>Résolution :</strong></p>
+
+        <ul class="steps">
+            <li>On part de la formule générale : $P_F(t) = 1 - P_{C_0} \cdot e^{-\lambda t}$.</li>
+            <li>On vérifie : $\lambda t = 10^{-4} \ll 1$, donc $e^{-\lambda t} \approx 1 - \lambda t = 1 - 10^{-4}$.</li>
+            <li>Application : $P_F(1) = 1 - 0{,}95 \times (1 - 10^{-4}) = 1 - 0{,}95 + 0{,}95 \times 10^{-4}$.</li>
+            <li>Résultat : $P_F(1) = 0{,}05 + 9{,}5 \times 10^{-5} \approx 0{,}0501$.</li>
+        </ul>
+
+        <div class="formula-box">
+            $$P_F(1\ \text{h}) = 1 - 0{,}95 \cdot e^{-10^{-4}} \approx 0{,}05 + 9{,}5 \times 10^{-5} \approx \mathbf{5{,}01\%}$$
+            <span class="formula-label">Probabilité de défaillance après 1 h avec 5 % de défauts initiaux</span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Interprétation :</strong> La probabilité de défaillance est dominée par les
+            5 % de composants déjà défectueux <em>avant</em> le vol. La contribution des nouvelles
+            défaillances en cours de vol ($9{,}5 \times 10^{-5}$) est 500 fois plus faible que le
+            terme initial. Cela illustre l'importance critique des <strong>tests d'acceptance avant
+            vol</strong> : sans vérification, les défauts de fabrication ou d'installation
+            constituent la source principale de risque, bien devant les défaillances aléatoires
+            en service.
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Scénario nominal — Exercice 1">
+                <p>$P_{C_0} = 1$ — tous les calculateurs vérifiés avant vol.<br>
+                $P_F(1\ \text{h}) = 10^{-4}$<br>
+                Risque très faible, dominé par les défaillances aléatoires en vol.</p>
+            </div>
+            <div class="compare-item bad" data-label="Scénario dégradé — Exercice 3">
+                <p>$P_{C_0} = 0{,}95$ — 5 % de défauts non détectés au décollage.<br>
+                $P_F(1\ \text{h}) \approx 5{,}01\%$<br>
+                Risque 500 fois plus élevé — dominé par les défauts initiaux.</p>
+            </div>
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 109–116</p>
+
+    </div>
+
+</body>
+</html>

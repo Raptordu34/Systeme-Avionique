@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Sécurité et Sûreté de fonctionnement</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Pas d'état sûr en vol</strong> — Contrairement à une voiture qu'on immobilise sur le bord de la route, un avion en défaillance ne peut pas s'arrêter ; la catastrophe est souvent inévitable. Le seuil toléré est $P < 10^{-6}$ défaillance catastrophique par heure de vol.</li>
+            <li><strong>Deux grandes familles d'erreurs</strong> — Défaillances indirectes (aléatoires, surviennent en service) combattues par la redondance ; défauts de conception (statiques, présents dès la fabrication) contrôlés par un processus de développement certifié (cycle en V, DAL A–E).</li>
+            <li><strong>Trois remèdes architecturaux</strong> — Redondance pour les défaillances indirectes ; ségrégation physique + dissimilarité technologique pour éliminer les points uniques de défaillance (SPOF) ; validation & vérification rigoureuses pour les défauts de conception.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ── POURQUOI LA SÛRETÉ EST CRITIQUE ── -->
+        <hr class="section-divider">
+        <h3>Pourquoi la sûreté de fonctionnement est critique</h3>
+
+        <p>
+            Tout système peut connaître des défaillances — un logiciel, un composant électronique, une pièce mécanique. Dans la plupart des domaines, une défaillance est gênante mais surmontable : on arrête la machine, on appelle le technicien, on redémarre. En aviation, cette issue n'existe pratiquement pas.
+        </p>
+
+        <div class="callout-danger">
+            <strong>Absence d'état sûr en l'air :</strong> Un avion à 10 000 mètres d'altitude ne peut pas <em>se garer sur le bord de la route</em> en attendant les secours. Toute défaillance critique en vol peut se terminer en catastrophe, avec des centaines de victimes. Contrairement à une voiture (on freine et on s'arrête) ou à une centrale nucléaire (on insère les barres de contrôle), il n'existe pas de position « repos sûr » pour un avion en vol.
+        </div>
+
+        <p>
+            Cette contrainte fondamentale distingue l'avionique de presque toutes les autres industries. La question posée aux concepteurs de systèmes avioniques est donc : <em>combien d'accidents la société est-elle prête à tolérer ?</em>
+        </p>
+
+        <h4>Le seuil socialement accepté</h4>
+
+        <p>
+            La réponse, traduite en exigence réglementaire internationale, est la suivante :
+        </p>
+
+        <div class="formula-box">
+            $$P\left\{\text{défaillance catastrophique d'un avion de ligne par heure de vol}\right\} < 10^{-6}$$
+            <span class="formula-label">Seuil de sûreté de fonctionnement — Transport aérien commercial</span>
+        </div>
+
+        <p>
+            Concrètement, $10^{-6}$ par heure de vol signifie qu'un avion devrait voler en moyenne <strong>un million d'heures</strong> avant de subir une défaillance catastrophique liée à ses systèmes — soit environ 114 années de vol ininterrompu. C'est à partir de ce seuil global que sont déclinées toutes les exigences de chaque système avionique embarqué.
+        </p>
+
+        <div class="tip-box">
+            <strong>Mise en perspective :</strong> Une flotte mondiale totalise facilement plusieurs dizaines de millions d'heures de vol par an. Un seuil de $10^{-6}$/h sur l'avion entier permettrait encore plusieurs dizaines d'accidents catastrophiques par an — ce qui est inacceptable. C'est pourquoi le seuil imposé à chaque sous-système individuel est <em>bien inférieur</em> à $10^{-6}$/h, comme détaillé dans la section sur les seuils de probabilité.
+        </div>
+
+        <!-- ── TROIS DIMENSIONS ── -->
+        <hr class="section-divider">
+        <h3>Les trois dimensions de la sûreté de fonctionnement</h3>
+
+        <p>
+            La sûreté de fonctionnement se décline en trois propriétés distinctes, chacune relevant de responsabilités différentes entre constructeur et opérateur. L'analogie avec un bâtiment est utile : un immeuble doit <em>être disponible</em> (ouvert et accessible à tout moment), <em>sûr</em> (ne pas s'effondrer), et <em>durable</em> (tenir dans le temps avec un entretien approprié).
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Disponibilité<br><em>Availability</em></th>
+                        <th>Sécurité<br><em>Safety</em></th>
+                        <th>Durabilité<br><em>Durability</em></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Définition</strong></td>
+                        <td>Aptitude d'une entité à être ou à demeurer en état d'accomplir une fonction dans des conditions données et à un instant donné.</td>
+                        <td>Aptitude d'une entité à éviter de faire apparaître, dans des conditions données, des événements critiques ou catastrophiques.</td>
+                        <td>Aptitude d'une entité à être ou à demeurer en état d'accomplir une fonction dans des conditions données d'utilisation et de maintenance (jusqu'à une limite fixée).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Responsabilité</strong></td>
+                        <td>Constructeur (design) <em>et</em> opérateur (maintenance)</td>
+                        <td>Constructeur (design) <strong>uniquement</strong></td>
+                        <td>Constructeur (design) et opérateur (maintenance préventive)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Exemple avionique</strong></td>
+                        <td>Un système de navigation disponible 99,999 % du temps de vol. Air France peut améliorer ce taux en renforçant sa maintenance.</td>
+                        <td>Les commandes de vol ne provoquent jamais un décrochage incontrôlable. Airbus est seul responsable — Air France ne peut pas compenser un défaut de conception.</td>
+                        <td>Un calculateur avionique certifié 20 000 heures de fonctionnement. Responsabilité partagée : Airbus dimensionne, l'opérateur remplace avant la limite.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Point clé :</strong> La <em>sécurité</em> (safety) est la seule propriété qui ne dépend <em>que</em> du constructeur. Un opérateur peut améliorer la disponibilité en intensifiant sa maintenance, ou la durabilité en respectant des intervalles de remplacement stricts — mais il ne peut absolument pas compenser un défaut de conception de sécurité. C'est au bureau d'études de l'éliminer dès la conception.
+        </div>
+
+        <!-- ── CLASSIFICATION DES DÉFAILLANCES ── -->
+        <hr class="section-divider">
+        <h3>Classification des défaillances</h3>
+
+        <h4>Définitions fondamentales</h4>
+
+        <p>
+            Une <strong>défaillance</strong> se produit lorsqu'un système ne se comporte plus conformément à sa spécification. La cause de ce comportement incorrect s'appelle une <strong>erreur</strong>. La distinction est importante : l'erreur est la <em>cause interne</em>, la défaillance est l'<em>effet observable de l'extérieur</em>.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Exemple :</strong> Un capteur de vitesse anémométrique présente une erreur de calibration et renvoie une valeur incorrecte (l'<em>erreur</em>). Le calculateur de commandes de vol, alimenté par cette mauvaise mesure, envoie des ordres inadaptés aux gouvernes — le système de commandes de vol est en <em>défaillance</em> du point de vue de l'avion.
+        </div>
+
+        <h4>Défaillances indirectes — erreurs dynamiques</h4>
+
+        <p>
+            Une <strong>défaillance indirecte</strong> est causée par un événement extérieur aléatoire qui frappe un système pourtant correctement conçu. Ce n'est pas un défaut préexistant : le système fonctionnait parfaitement, mais une cause externe imprévisible vient le perturber <em>au cours du fonctionnement</em>.
+        </p>
+
+        <ul>
+            <li>Rupture d'une pièce mécanique entraînant une coupure de ligne électrique</li>
+            <li>Décharge électrostatique ou foudre détruisant un composant semi-conducteur</li>
+            <li>Impact d'oiseau sectionner un câblage de capteur</li>
+            <li>Corrosion progressive d'une connexion électrique</li>
+        </ul>
+
+        <p>
+            On parle d'<em>erreur dynamique</em> car l'erreur apparaît <em>au cours de la vie du système</em>, sous l'effet d'un événement aléatoire. C'est précisément parce que ces événements sont aléatoires qu'on peut leur associer une probabilité d'occurrence — et donc définir des seuils de $P_{\max}$ à respecter.
+        </p>
+
+        <h4>Défauts de conception — erreurs statiques</h4>
+
+        <p>
+            Un <strong>défaut de conception</strong> est une erreur qui existait dans le système dès sa création — dans le code source, dans les plans mécaniques, dans la spécification du composant ou dans le processus de fabrication. Contrairement aux défaillances indirectes, il n'est pas le fruit du hasard : il est <strong>déterministe</strong> et peut se déclencher dès la première utilisation ou rester dormant des années, jusqu'au jour où une situation particulière le révèle.
+        </p>
+
+        <div class="callout-warning">
+            <strong>Analogie :</strong> Un défaut de conception est comme une bombe à retardement sans minuterie connue. Le système fonctionne normalement pendant des mois ou des années, jusqu'au moment précis où les conditions qui révèlent le bug se produisent — et il peut alors être trop tard pour réagir.
+        </div>
+
+        <p>Les défauts de conception typiques en avionique se répartissent en quatre catégories :</p>
+
+        <ul>
+            <li>
+                <strong>Erreur logicielle (bug) :</strong> une condition limite oubliée dans le code. Exemple classique où le cas limite exact n'est jamais testé :
+                <div class="code-wrapper">
+<pre><code>IF altitude &lt; 1000 ft THEN ...   &lt;!-- comportement basse altitude --&gt;
+IF altitude &gt; 1000 ft THEN ...   &lt;!-- comportement haute altitude --&gt;
+&lt;!-- Le cas altitude = 1000 ft exactement n'est jamais traité ! --&gt;</code></pre>
+                </div>
+                Ce bug peut rester dormant des années si aucun avion ne se trouve jamais <em>exactement</em> à 1 000 ft au moment critique. Puis un jour, les conditions se réunissent.
+            </li>
+            <li>
+                <strong>Défaut de conception matériel :</strong> mauvais dimensionnement d'une poutre structurelle sous charge dynamique, composant électronique sous-dimensionné en courant maximal admissible, dissipation thermique insuffisante d'un circuit intégré à pleine charge.
+            </li>
+            <li>
+                <strong>Défaut à la fabrication :</strong> changement dans le procédé de fabrication — nouveau fournisseur de matière première, modification d'un traitement thermique — qui altère une caractéristique de la pièce sans être détecté par le contrôle qualité standard.
+            </li>
+            <li>
+                <strong>Mauvaise évaluation de l'environnement :</strong>
+                <ul>
+                    <li>EMC (compatibilité électromagnétique) : foudre, rayonnements des radars proches, émissions parasites d'autres équipements à bord</li>
+                    <li>Contraintes mécaniques : vibrations en croisière, chocs lors de turbulences sévères</li>
+                    <li>Température extérieure : de $+50°C$ au sol en zone tropicale à $-55°C$ en croisière à haute altitude</li>
+                </ul>
+            </li>
+        </ul>
+
+        <!-- ── CRITÈRES DE CLASSIFICATION ── -->
+        <hr class="section-divider">
+        <h3>Critères de classification des défaillances</h3>
+
+        <h4>Niveaux de criticité selon les conséquences sur l'avion</h4>
+
+        <p>
+            Les défaillances sont classées en cinq niveaux en fonction de leurs <strong>conséquences sur l'avion, ses occupants et l'équipage</strong>. Cette classification est définie par les autorités de certification (FAA/EASA) et constitue le fondement de toute analyse de sécurité avionique.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th><span class="badge badge-green">No safety effect</span></th>
+                        <th><span class="badge badge-blue">Minor effect</span></th>
+                        <th><span class="badge badge-blue">Major effect</span></th>
+                        <th><span class="badge badge-orange">Hazardous effect</span></th>
+                        <th><span class="badge badge-red">Catastrophic effect</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Effet avion</strong></td>
+                        <td>Aucun effet sur les capacités opérationnelles ou la sécurité</td>
+                        <td>Légère réduction des capacités ou marges de sécurité</td>
+                        <td>Réduction significative des capacités ou marges de sécurité</td>
+                        <td>Large réduction des capacités ou marges de sécurité</td>
+                        <td>Normalement avec perte totale de l'appareil</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effet occupants</strong></td>
+                        <td>Simple inconvénient pour les passagers</td>
+                        <td>Inconfort physique</td>
+                        <td>Détresse physique, possiblement des blessures</td>
+                        <td>Blessures graves ou fatales pour un occupant</td>
+                        <td>Morts multiples</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effet équipage</strong></td>
+                        <td>Aucun effet sur l'équipage</td>
+                        <td>Légère augmentation de la charge de travail ou recours aux procédures d'urgence</td>
+                        <td>Inconfort physique ou forte augmentation de la charge de travail</td>
+                        <td>Détresse physique ou charge excessive — capacité à accomplir les tâches de pilotage diminuée</td>
+                        <td>Blessures fatales ou incapacitation de l'équipage</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Exemple concret</strong></td>
+                        <td>Panne de l'IFE (écrans de divertissement passagers)</td>
+                        <td>Extinction d'un écran de navigation secondaire</td>
+                        <td>Moteur en feu, une pale transperce la carlingue — décès d'un passager</td>
+                        <td>Perte de contrôle partielle causant des blessures graves à l'équipage</td>
+                        <td>Crash de l'appareil — décès de la totalité ou d'une grande partie des passagers</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Probabilités d'occurrence par rapport à la vie d'un avion</h4>
+
+        <p>
+            À chaque niveau de criticité correspond une probabilité d'occurrence maximale acceptable, exprimée par rapport à la vie opérationnelle d'un avion. La logique est simple : plus les conséquences sont graves, moins l'événement doit être probable — jusqu'au seuil « extrêmement improbable » pour le catastrophique.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="Minor — Probable">
+                <p>Peut survenir une ou plusieurs fois au cours de la vie opérationnelle de <em>chaque avion individuel</em>. Par exemple, une légère anomalie d'affichage peut se manifester de temps en temps sur n'importe quel appareil — acceptable car sans conséquence sérieuse.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Major — Improbable">
+                <p>On ne s'attend pas à ce que cela survienne pendant la vie opérationnelle d'un <em>avion individuel pris au hasard</em>. Sur une flotte de 1 000 avions du même type, quelques-uns pourraient connaître cet événement sur toute leur vie — acceptable car les conséquences restent gérables.</p>
+            </div>
+            <div class="compare-item bad" data-label="Catastrophic — Extrêmement improbable">
+                <p>Si peu probable qu'on ne s'attend pas à ce que cela survienne pendant la vie opérationnelle de <em>l'ensemble des avions d'un même type</em> dans le monde. C'est une exigence collective, pas individuelle : on exige que la flotte entière ne connaisse jamais cet événement.</p>
+            </div>
+        </div>
+
+        <h4>Seuils numériques — défaillances indirectes</h4>
+
+        <p>
+            Pour les défaillances indirectes (aléatoires), les seuils de probabilité par heure de vol sont fixés selon la criticité du système. Ces valeurs sont exprimées pour <em>une heure de vol</em> et s'appliquent à <em>tous types d'avions confondus</em> de façon normalisée :
+        </p>
+
+        <div class="key-value">
+            <dt>Système non critique (no safety / minor effect)</dt>
+            <dd>$P_{\max} = 10^{-3}$ /h</dd>
+            <dt>Système critique (major effect)</dt>
+            <dd>$P_{\max} = 10^{-5}$ /h</dd>
+            <dt>Système très critique (hazardous effect)</dt>
+            <dd>$P_{\max} = 10^{-7}$ /h</dd>
+            <dt>Système extrêmement critique (catastrophic effect)</dt>
+            <dd>$P_{\max} = 10^{-9}$ /h</dd>
+            <dt>Référence : probabilité de défaillance du pilote</dt>
+            <dd>$\sim 10^{-7}$ /h</dd>
+        </div>
+
+        <p class="inline-note">La probabilité de défaillance du pilote ($\sim 10^{-7}$/h) est fournie à titre de repère pratique : un système à effet « hazardous » doit être au moins aussi fiable que le pilote lui-même. Si le système était moins fiable que le pilote, il constituerait un risque supplémentaire plutôt qu'une aide.</p>
+
+        <h4>Point unique de défaillance — SPOF</h4>
+
+        <p>
+            Pour les systèmes à effet catastrophique, un critère supplémentaire et <strong>absolu</strong> s'ajoute aux seuils probabilistes :
+        </p>
+
+        <div class="theorem-box" data-label="Règle fondamentale SPOF">
+            Une défaillance <strong>individuelle</strong> ne doit <em>en aucun cas</em> donner lieu à des conséquences catastrophiques, quelle que soit sa probabilité d'occurrence — même si elle est infime.
+        </div>
+
+        <p>
+            Un <strong>point unique de défaillance</strong> (<em>Single Point Of Failure</em>, SPOF) est tout composant ou maillon dont la défaillance seule suffit à provoquer une catastrophe. Les exemples en avionique sont nombreux et parfois contre-intuitifs :
+        </p>
+
+        <ul>
+            <li>Une <strong>seule source d'alimentation électrique</strong> pour l'avion — si elle tombe, tout s'éteint simultanément</li>
+            <li>Le <strong>même type de composant</strong> (même référence, même fabricant) dans tous les calculateurs redondants — un défaut de conception hardware commun pourrait éliminer tous les calculateurs simultanément</li>
+            <li>La <strong>même technologie réseau</strong> utilisée entre l'ensemble des calculateurs — une défaillance du bus commune affecterait tout le réseau à la fois</li>
+            <li>Un <strong>seul concentrateur de données</strong> collectant toutes les mesures d'un même paramètre critique (altitude, pression cabine…)</li>
+            <li>Un <strong>seul joystick</strong> (side-stick) pour piloter l'avion — si ce joystick tombe en panne, l'équipage n'a plus aucun moyen de piloter</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Analogie électricité domestique :</strong> C'est exactement pourquoi votre tableau électrique dispose de plusieurs disjoncteurs différenciés par circuit, et non d'un seul disjoncteur général. Un seul disjoncteur coupant tout serait un SPOF : une surtension sur votre lave-linge laisserait aussi votre réfrigérateur hors tension — et vos aliments seraient perdus. La séparation des circuits rend chaque disjoncteur indépendant.
+        </div>
+
+        <!-- ── DAL ET PROBABILITÉS PAR CLASSE ── -->
+        <hr class="section-divider">
+        <h3>Classes d'appareils et Design Assurance Level (DAL)</h3>
+
+        <h4>Classification des avions</h4>
+
+        <p>
+            Les avions sont regroupés en classes selon leur complexité et leur masse, chacune avec des exigences de sûreté adaptées au risque réel qu'ils représentent. Plus l'avion est complexe et transporte de passagers, plus les exigences sont strictes :
+        </p>
+
+        <ul>
+            <li><strong>Air Transport (AT) :</strong> Airbus, Boeing, avions régionaux — les avions de ligne commerciaux transportant des dizaines à des centaines de passagers. Exigences les plus strictes. Applique les mêmes critères numériques que la Classe IV.</li>
+            <li><strong>Classe IV :</strong> 2 turbopropulseurs, moins de 20 passagers (ex : ATR 42, Beechcraft 1900)</li>
+            <li><strong>Classe III :</strong> avions multimoteurs à pistons ou turbopropulseurs de masse égale ou supérieure à 6 000 livres</li>
+            <li><strong>Classe II :</strong> avions multimoteurs à réaction ou turbopropulseurs de moins de 6 000 livres</li>
+            <li><strong>Classe I :</strong> 1 moteur à pistons (<em>reciprocating</em>), moins de 2 000 kg — avions légers de tourisme, de formation. Exigences les plus légères.</li>
+        </ul>
+
+        <h4>Design Assurance Level (DAL) — niveaux A à E</h4>
+
+        <p>
+            Le <strong>Design Assurance Level</strong> (DAL) est un niveau de rigueur imposé au <em>processus de développement</em> d'un logiciel ou d'un matériel — pas une mesure de sa fiabilité en service, mais une exigence sur la façon dont il a été conçu et validé. Plus la fonction est critique, plus le processus doit être tracé, documenté et rigoureux.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="DAL A — Catastrophic">
+                <p>Logiciel ou matériel dont la défaillance peut causer ou contribuer directement à une catastrophe. Processus de développement le plus rigoureux : couverture de code MC/DC obligatoire en DO-178C, revues formelles à chaque étape.</p>
+            </div>
+            <div class="compare-item bad" data-label="DAL B — Hazardous">
+                <p>Défaillance pouvant causer des blessures graves ou un événement dangereux. Couverture de code décision/condition requise. Les commandes de vol d'un A320 sont typiquement DAL A ou B.</p>
+            </div>
+            <div class="compare-item neutral" data-label="DAL C — Major">
+                <p>Défaillance réduisant significativement les capacités de l'avion. Couverture de code décision requise. Exemple : système de gestion de vol (FMS) pour certaines fonctions.</p>
+            </div>
+            <div class="compare-item neutral" data-label="DAL D — Minor">
+                <p>Défaillance n'affectant que légèrement les capacités. Couverture de code instruction requise. Exigences de traçabilité allégées.</p>
+            </div>
+            <div class="compare-item good" data-label="DAL E — No Safety Effect">
+                <p>Aucune exigence de sûreté fonctionnelle. Exemple : système de divertissement passagers (IFE), logiciels de maintenance au sol. Processus de développement standard, sans obligation spécifique d'aviation.</p>
+            </div>
+        </div>
+
+        <p class="inline-note">
+            Les niveaux DAL pour les logiciels sont définis par la norme <strong>RTCA DO-178C</strong> (équivalent européen : ED-12C). Pour le matériel électronique complexe (FPGA, ASIC…), c'est la norme <strong>RTCA DO-254</strong> qui s'applique — entrée en vigueur réellement à partir de l'Airbus A380.
+        </p>
+
+        <h4>Décomposition du seuil global — avion de ligne</h4>
+
+        <p>
+            Le seuil de $10^{-6}$/h pour l'avion entier se décompose en cascade jusqu'à chaque mode d'erreur individuel. La logique de décomposition pour un avion de transport aérien (AT) :
+        </p>
+
+        <ul>
+            <li>Seuil global : $P\{\text{accident catastrophique}\} < 10^{-6}$/h</li>
+            <li>Environ <strong>1 accident sur 10</strong> est lié à une défaillance système (les 9 autres ont des causes humaines, météo, etc.) → budget dédié aux systèmes : $< 10^{-7}$/h</li>
+            <li>Il existe environ <strong>100 modes d'erreurs</strong> aux conséquences potentiellement catastrophiques dans un avion de ligne</li>
+            <li>Chaque mode d'erreur catastrophique doit donc respecter : $P_i < 10^{-9}$/h</li>
+            <li>Vérification de cohérence : $\sum_i P_i \approx 100 \times 10^{-9} = 10^{-7}$/h ✓</li>
+        </ul>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">10⁻⁹</span>
+                <span class="metric-label">Catastrophic — AT & Classe IV (par mode)</span>
+            </div>
+            <div class="metric-card bad">
+                <span class="metric-value">10⁻⁷</span>
+                <span class="metric-label">Hazardous — AT & Classe IV</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">10⁻⁵</span>
+                <span class="metric-label">Major — AT & Classe IV</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">10⁻⁶</span>
+                <span class="metric-label">Catastrophic — Classe I (monomoteur léger)</span>
+            </div>
+        </div>
+
+        <p class="inline-note">Pour un avion de Classe I (monomoteur léger, &lt; 2 000 kg), le seuil catastrophique est de $10^{-6}$/h — soit 1 000 fois moins strict qu'un avion de ligne. La justification est que ces avions transportent au maximum quelques personnes et volent en VFR (vol à vue), avec des risques d'échelle très différente.</p>
+
+        <!-- ── MISE EN ŒUVRE ── -->
+        <hr class="section-divider">
+        <h3>Mise en œuvre des exigences de conception</h3>
+
+        <h4>Remède aux défaillances indirectes : la redondance</h4>
+
+        <p>
+            Pour atteindre $10^{-9}$/h de probabilité de perte des gouvernes alors qu'un calculateur individuel a une probabilité de panne de $10^{-4}$/h, la solution est la <strong>redondance</strong> : multiplier les composants critiques de façon que la défaillance simultanée de plusieurs instances devienne extrêmement improbable.
+        </p>
+
+        <p>
+            Sur un Airbus A340, le système de commande de vol (<em>Flight Control Computer</em>, FCC) illustre ce principe. Plusieurs calculateurs redondants reçoivent les mêmes données de capteurs et commandent les mêmes actuateurs :
+        </p>
+
+        <div class="key-value">
+            <dt>Exigence système : $P$\{perte des gouvernes\}</dt>
+            <dd>$< 10^{-9}$ /h</dd>
+            <dt>Fiabilité d'un calculateur individuel</dt>
+            <dd>$P\{\text{perte d'un calculateur}\} < 10^{-4}$ /h</dd>
+            <dt>Fiabilité d'un actuateur mécanique</dt>
+            <dd>$P\{\text{défaillance mécanique}\} < 10^{-7}$ /h</dd>
+        </div>
+
+        <p>
+            La redondance <em>multiplie</em> les probabilités : deux calculateurs indépendants devant tomber en panne simultanément donnent $(10^{-4})^2 = 10^{-8}$/h. Avec trois calculateurs et une logique de vote majoritaire (2 contre 1), on approche le seuil de $10^{-9}$/h requis.
+        </p>
+
+        <div class="tip-box">
+            <strong>Analogie parachute :</strong> Un parachutiste professionnel emporte systématiquement un parachute de secours. La probabilité que les deux parachutes échouent simultanément est le produit de leurs probabilités individuelles — si chacun a $10^{-3}$ de chance de défaillir, les deux ensemble ont $10^{-6}$ de chance. La redondance démultiplie la fiabilité.
+        </div>
+
+        <h4>Remède aux points uniques de défaillance : ségrégation et dissimilarité</h4>
+
+        <p>
+            La redondance ne suffit pas si tous les composants redondants partagent une vulnérabilité commune. Un incendie dans la soute avionique, par exemple, détruirait simultanément tous les calculateurs — même les calculateurs redondants — s'ils se trouvaient tous au même endroit. Deux solutions complémentaires s'imposent :
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>Ségrégation physique</strong><br>
+                Séparer physiquement les calculateurs redondants dans des compartiments distincts (<em>bays</em> gauche et droite sur Airbus). En cas d'incendie dans un compartiment, y compris lors de l'activation des systèmes d'arrosage d'urgence, les calculateurs de l'autre compartiment survivent et maintiennent la capacité de vol.
+                <span class="badge badge-orange" style="margin-top:0.75rem;display:inline-block">Contre les causes communes physiques</span>
+            </div>
+            <div class="highlight-box">
+                <strong>Dissimilarité technologique</strong><br>
+                Utiliser des technologies différentes (processeurs, compilateurs, équipes de développement) pour les systèmes redondants. Si trois calculateurs exécutent le même logiciel compilé avec le même compilateur, un bug commun les ferait tous tomber simultanément — annulant l'effet de la redondance.
+                <span class="badge badge-blue" style="margin-top:0.75rem;display:inline-block">Contre les défauts de conception communs</span>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Analogie coupe-feu :</strong> C'est le principe des cloisons coupe-feu dans les immeubles. Une grande salle sans cloisons est un SPOF incendie : le feu se propage partout sans obstacle. Les compartiments séparés par des cloisons ignifugées limitent la propagation — même si un compartiment brûle, les autres restent intacts. En avionique, le « compartimentage » est à la fois physique (ségrégation spatiale) et logique (dissimilarité technologique).
+        </div>
+
+        <h4>Remède aux défauts de conception : le processus de développement rigoureux</h4>
+
+        <p>
+            Contrairement aux défaillances indirectes, les défauts de conception ne peuvent pas être quantifiés probabilistiquement : ils sont déterministes. Un bug existe ou n'existe pas — on ne peut pas dire « il apparaîtra avec une probabilité de $10^{-9}$/h ». La seule réponse est donc un <strong>processus de développement rigoureux et certifié</strong>, dont la rigueur est validée par les autorités de certification avant toute mise en service.
+        </p>
+
+        <p>Ce processus suit le <strong>cycle en V</strong> :</p>
+
+        <ul class="steps">
+            <li><strong>Spécification du système</strong> — Définir précisément ce que le système doit faire : exigences fonctionnelles, de performance, d'interface et de sûreté</li>
+            <li><strong>Spécification des composants et du hardware/software</strong> — Décomposer progressivement jusqu'aux modules élémentaires : drivers E/S, design PCB, cœurs CPU, portes logiques</li>
+            <li><strong>Réalisation</strong> — Implémentation du code et fabrication du matériel selon les spécifications unitaires</li>
+            <li><strong>Tests unitaires et d'intégration</strong> — Vérifier chaque module isolément, puis lors de l'intégration progressive (soft + hard, puis calculateurs redondants)</li>
+            <li><strong>Tests composants et système complets</strong> — Valider l'ensemble du système face aux spécifications initiales, en conditions représentatives</li>
+        </ul>
+
+        <p>
+            Les deux faces du cycle en V répondent à deux questions distinctes et complémentaires :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Validation — Première phase du V (descente)">
+                <p><em>« Construit-on le bon système ? »</em><br><br>
+                S'assure que la spécification est correcte, complète et cohérente avec les besoins réels. On vérifie qu'on a bien formulé <em>ce qu'il faut faire</em> avant de commencer à le faire. Une erreur détectée ici est 10 à 100 fois moins coûteuse à corriger qu'en phase de test système.</p>
+            </div>
+            <div class="compare-item good" data-label="Vérification — Seconde phase du V (montée)">
+                <p><em>« Construit-on le système correctement ? »</em><br><br>
+                S'assure que la réalisation correspond bien aux spécifications de chaque niveau. On vérifie que <em>ce qui a été fait</em> est conforme à <em>ce qui avait été demandé</em>, niveau par niveau, en remontant le V.</p>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>V &amp; V en pratique :</strong> Ces deux activités — Validation et Vérification — sont au cœur de tout dossier de certification aéronautique. Un logiciel DAL A doit démontrer, documentation à l'appui, que chaque exigence a été validée (couverture des exigences à 100%) <em>et</em> que chaque ligne de code a été vérifiée par des tests atteignant la couverture MC/DC (Modified Condition/Decision Coverage). La démonstration documentaire est aussi importante que le code lui-même.
+        </div>
+
+        <!-- ── CERTIFICATION ── -->
+        <hr class="section-divider">
+        <h3>Certification de l'avion</h3>
+
+        <p>
+            Les exigences de sûreté de fonctionnement ne sont pas auto-déclarées par les constructeurs : elles sont vérifiées et approuvées par des <strong>autorités de certification indépendantes</strong> avant qu'un avion ne soit autorisé à transporter des passagers commerciaux.
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>Autorités de certification</strong>
+                <ul>
+                    <li><strong>EASA</strong> (anciennement JAA) — <em>European Union Aviation Safety Agency</em> : autorité de certification européenne. Elle certifie les Airbus, les ATR, et tout avion commercialisé en Europe.</li>
+                    <li><strong>FAA</strong> — <em>Federal Aviation Administration</em> : autorité américaine. Elle certifie les Boeing, Gulfstream, et tout avion mis sur le marché américain.</li>
+                </ul>
+            </div>
+            <div class="highlight-box">
+                <strong>Documents réglementaires</strong>
+                <ul>
+                    <li><strong>CS</strong> (anciennement JAR) — <em>Certification Specifications</em> : règlements de certification européens. Définissent les exigences techniques à satisfaire pour chaque type d'avion (CS-25 pour les avions de transport).</li>
+                    <li><strong>FAR</strong> — <em>Federal Aviation Regulations</em> : règlements américains équivalents (FAR Part 25 pour les avions de transport).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Validation croisée :</strong> Un Airbus A320 vendu à une compagnie américaine (Delta, United…) doit d'abord être certifié EASA, puis accepté par la FAA via un accord de validation bilatérale (BASA). Dans les faits, EASA et FAA harmonisent de plus en plus leurs exigences techniques — mais les deux processus de certification restent formellement distincts, et chaque autorité peut imposer des conditions supplémentaires.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 27–46</p>
+        <p class="source">RTCA DO-178C — Software Considerations in Airborne Systems and Equipment Certification (2011)</p>
+        <p class="source">RTCA DO-254 — Design Assurance Guidance for Airborne Electronic Hardware (2000)</p>
+        <p class="source">SAE ARP4761 — Guidelines and Methods for Conducting the Safety Assessment Process on Civil Airborne Systems</p>
+
+    </div>
+
+</body>
+</html>

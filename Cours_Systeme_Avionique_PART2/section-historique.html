@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Historique des systèmes avioniques</h2>
+
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Avions de ligne</strong> — croissance massive : 8 passagers en 1920, 500 en 2000 ; poids multiplié par 300 en 80 ans.</li>
+            <li><strong>Trois générations de commandes de vol</strong> — câbles mécaniques → servocommandes hydrauliques (A300/310) → fly-by-wire électrique (A320+).</li>
+            <li><strong>Fly-by-wire</strong> — l'ordinateur est interposé entre le pilote et les gouvernes ; il calcule les lois de pilotage et surveille en permanence l'enveloppe de vol.</li>
+            <li><strong>Principe de certification</strong> — « plus c'est grave, plus cela doit être improbable » → redondance + dissimilarités + ségrégations physiques.</li>
+            <li><strong>Déterminisme avant performance</strong> — les calculateurs avioniques sont volontairement moins puissants que le grand public : la garantie de temps de réponse prime sur la vitesse brute.</li>
+        </ul>
+    </div>
+
+    <div class="detailed-content">
+
+        <h3>Évolution des avions de ligne</h3>
+
+        <p>
+            En moins d'un siècle, l'avion de transport civil a connu une évolution spectaculaire
+            sur tous ses paramètres physiques. Cette croissance a directement entraîné une augmentation
+            de la complexité des systèmes embarqués : plus d'avion, plus de systèmes à piloter,
+            plus de données à traiter.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Époque</th>
+                        <th>Passagers</th>
+                        <th>Vitesse max.</th>
+                        <th>Rayon d'action</th>
+                        <th>Poids max.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1920</strong></td>
+                        <td>8–10</td>
+                        <td>125 km/h</td>
+                        <td>1 000 km</td>
+                        <td>1,9 T (vide 1,2 T)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>1930–1940</strong></td>
+                        <td>10–40</td>
+                        <td>300–500 km/h</td>
+                        <td>3 000–5 000 km</td>
+                        <td>11 T (vide 7,5 T)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>1950</strong></td>
+                        <td>~100</td>
+                        <td>800–900 km/h</td>
+                        <td>6 000–7 000 km</td>
+                        <td>60 T (vide 35 T)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>1970–1980</strong></td>
+                        <td>200–300</td>
+                        <td>Mach 0,8</td>
+                        <td>10 000–13 000 km</td>
+                        <td>100 T (vide 50 T)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>2000</strong></td>
+                        <td>500</td>
+                        <td>Mach 0,89</td>
+                        <td>15 000 km</td>
+                        <td>575 T (vide 370 T)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-info">
+            <strong>Cas particulier — Concorde (1969) :</strong> 100 passagers, Mach 2,02 (pointe à Mach 2,23),
+            rayon d'action 6 200 km, poids 185 T (à vide 79,3 T). Le Concorde est une exception à double titre :
+            ses performances sont supersoniques, et il était déjà doté de <em>commandes de vol électriques</em>
+            dès 1969 — une avance technologique de 15 ans sur les avions de ligne conventionnels.
+        </div>
+
+        <p>
+            Cette croissance se traduit par une demande de trafic aérien mondial exponentielle :
+            d'environ 500 giga PKT (passagers·kilomètre transportés) en 1970 à plus de
+            8 000 en 2020, avec une projection à 15 000 giga PKT en 2050 selon l'Académie de l'Air et de l'Espace.
+            La pression sur les systèmes avioniques — sécurité, performances, efficacité — ne fait qu'augmenter.
+        </p>
+
+        <h3>Les commandes de vol — définition et composants</h3>
+
+        <div class="highlight-box">
+            <strong>Définition — Commandes De Vol Électriques (CDVE) :</strong> Système qui fait le lien
+            entre le pilote et les <em>gouvernes aérodynamiques</em>, permettant la modification de la
+            trajectoire de l'avion. Composé de trois éléments : les <strong>organes de pilotage</strong>
+            (manche, palonnier), les <strong>actionneurs</strong> qui déplacent les gouvernes, et le
+            <strong>système de transmission</strong> entre les deux.
+        </div>
+
+        <p>
+            Un avion moderne dispose de nombreuses surfaces mobiles réparties sur les trois axes de rotation.
+            Chaque axe dispose de gouvernes dédiées :
+        </p>
+
+        <div class="two-col">
+            <div>
+                <h4>Les trois axes de l'avion</h4>
+                <ul>
+                    <li><strong>Tangage</strong> (pitch) — nez vers le haut ou vers le bas :
+                        profondeurs, plan horizontal réglable (THS / PHR)</li>
+                    <li><strong>Roulis</strong> (roll) — inclinaison latérale de l'aile :
+                        ailerons, spoilers</li>
+                    <li><strong>Lacet</strong> (yaw) — rotation autour de l'axe vertical :
+                        gouvernail de direction</li>
+                </ul>
+            </div>
+            <div>
+                <h4>Surfaces de l'A380 (exemple)</h4>
+                <ul>
+                    <li>Plan Horizontal Réglable (PHR)</li>
+                    <li>2 gouvernes de direction</li>
+                    <li>2 gouvernes de profondeur</li>
+                    <li>3 ailerons par aile</li>
+                    <li>8 spoilers par aile</li>
+                    <li>Becs et volets (hypersustentation)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie voiture :</strong> les spoilers d'un avion ressemblent aux aérofreins d'une
+            Formule 1 — ils créent de la traînée et détruisent de la portance pour ralentir ou aider
+            à virer. Sur un A380, 8 spoilers par aile peuvent agir indépendamment pour contrôler
+            précisément le roulis et la décélération.
+        </div>
+
+        <h3>Évolution technologique — des câbles au fly-by-wire</h3>
+
+        <ul class="steps">
+            <li>
+                <strong>Jusqu'aux années 60 — câbles mécaniques</strong>
+                <span class="badge badge-blue">Avions légers</span><br>
+                Liaison directe manche ↔ gouvernes par câbles, poulies et renvois mécaniques.
+                Le pilote exerce <em>directement sa force musculaire</em> sur les gouvernes.
+                Fiable et simple, mais inutilisable sur les grands avions lourds : les forces aérodynamiques
+                sur les gouvernes deviennent trop importantes pour être vaincues à la main.
+            </li>
+            <li>
+                <strong>Années 70/80 — servocommandes hydrauliques</strong>
+                <span class="badge badge-blue">A300 / A310</span><br>
+                Le câble mécanique subsiste mais actionne un <em>servomoteur</em> qui pilote une
+                <em>servocommande hydraulique</em>. L'assistance hydraulique démultiplie la force du pilote.
+                Le pilote automatique peut aussi agir via une liaison électrique directe sur le servomoteur.
+            </li>
+            <li>
+                <strong>Années 80 — fly-by-wire « lois directes »</strong>
+                <span class="badge badge-orange">A320 (1er FBW Airbus)</span><br>
+                Suppression totale des câbles et poulies, remplacés par de simples fils électriques.
+                Le signal du manche est numérisé et transmis électriquement à la servocommande.
+                La relation manche → gouverne est directement proportionnelle (loi directe).
+                <em>Note : le Concorde disposait déjà de commandes électriques dès 1969.</em>
+            </li>
+            <li>
+                <strong>Années 80/90 — fly-by-wire « lois normales »</strong>
+                <span class="badge badge-blue">A320 / A330 / A340</span><br>
+                Un <strong>ordinateur de commande de vol</strong> est interposé entre le pilote et les
+                servocommandes. L'ordinateur calcule des <em>lois de pilotage</em> complexes : il ne
+                commande plus une déflection proportionnelle, mais optimise les ordres en fonction de
+                la vitesse, de l'altitude et des limites structurelles de l'avion.
+            </li>
+            <li>
+                <strong>Années 2000 — fly-by-wire prédominant</strong>
+                <span class="badge badge-green">A380 / A400M / A350</span><br>
+                L'ordinateur est au cœur du système : il assure le calcul des lois, le monitoring,
+                la reconfiguration automatique en cas de panne. Le pilote exprime une <em>intention</em>
+                (ex : tirer sur le manche = monter), l'ordinateur calcule la réponse optimale sur
+                l'ensemble des surfaces disponibles.
+            </li>
+        </ul>
+
+        <h4>ServoMoteur et Servocommande — définitions clés</h4>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>ServoMoteur :</strong> Moteur électrique conçu pour générer le mouvement <em>précis</em>
+                d'un élément mécanique selon une commande externe. Transforme un signal électrique en
+                position angulaire ou linéaire contrôlée.
+            </div>
+            <div class="highlight-box">
+                <strong>Servocommande :</strong> Système de contrôle précis de position utilisant le principe
+                du <em>retour de force négatif</em> (negative feedback). La position réelle est mesurée
+                (potentiomètre) et comparée à la consigne ; la différence est amplifiée et corrige l'erreur.
+            </div>
+        </div>
+
+        <h3>Rôles des calculateurs fly-by-wire (A380)</h3>
+
+        <p>
+            Dans une architecture fly-by-wire moderne, les calculateurs de commandes de vol ont des
+            responsabilités bien plus larges qu'un simple relais électrique :
+        </p>
+
+        <ul>
+            <li><strong>Asservir les gouvernes</strong> — générer des consignes de position précises
+                vers les servocommandes (PHR, actionneurs…)</li>
+            <li><strong>Calculer les lois de pilotage</strong> — traduire l'intention du pilote
+                en ordres de déflection optimaux (facteur de charge, enveloppe de vol)</li>
+            <li><strong>Gérer l'aspect multi-calculateur</strong> — coordonner les calculateurs
+                PRIM et SEC, arbitrer en cas de désaccord</li>
+            <li><strong>Monitoring</strong> — surveillance permanente des entrées/sorties,
+                auto-surveillance, détection et isolation des pannes</li>
+            <li><strong>Alléger le travail du pilote</strong> — reconfiguration automatique
+                en cas de défaillance (ex : perte d'un aileron → compensation automatique)</li>
+            <li><strong>Surveiller le pilote</strong> — maintenir l'avion dans son enveloppe de vol
+                quelles que soient les commandes données</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie ESP automobile :</strong> le calculateur fly-by-wire ressemble au système
+            ESP (contrôle de stabilité) d'une voiture moderne. Même si vous braquillez violemment en
+            virage, l'ESP module les freins pour éviter la sortie de route. Sur un A320, même si le
+            pilote pousse le manche à fond vers le bas, le calculateur ne laissera pas l'avion dépasser
+            son facteur de charge structural maximal — il « filtre » l'ordre dangereux.
+        </div>
+
+        <h3>Certifications EASA et FAA</h3>
+
+        <div class="theorem-box" data-label="Principe fondamental">
+            « <strong>Plus c'est grave, plus cela doit être improbable.</strong> » —
+            Ce principe gouverne toute la conception des systèmes avioniques certifiés par l'EASA
+            (Europe) et la FAA (États-Unis).
+        </div>
+
+        <p>
+            La certification impose des spécifications très précises pour les commandes de vol.
+            Trois exigences fondamentales :
+        </p>
+
+        <ul>
+            <li>Le système doit <strong>traduire en ordres de déflection des gouvernes</strong> les
+                ordres venant du pilote ou du pilote automatique (respect du facteur de charge).</li>
+            <li>Le système doit <strong>maintenir l'avion dans son enveloppe de vol</strong> quelles
+                que soient les commandes données — protection structurelle automatique.</li>
+            <li>Le système doit être <strong>déterministe</strong> — fonctionnellement (résultat
+                garanti) ET temporellement (délai de réponse garanti).</li>
+        </ul>
+
+        <h4>Pannes catastrophiques identifiées (Safety System Analysis)</h4>
+
+        <div class="callout-danger">
+            <strong>Pannes dont la probabilité doit être quasi nulle :</strong>
+            <ul>
+                <li>Perte de contrôle simultanée des ailerons <em>et</em> des spoilers</li>
+                <li>Perte de contrôle de la profondeur</li>
+                <li>Panne oscillatoire en résonance structurelle</li>
+                <li>Perte de contrôle latéral après perte d'un moteur</li>
+                <li>Perte simultanée de spoilers, ailerons, direction et profondeur causée par
+                    une <em>panne unique</em></li>
+            </ul>
+            Règle absolue : <strong>aucune panne simple ne peut avoir des conséquences catastrophiques</strong>.
+            La Safety System Analysis documente l'effet de chaque panne possible.
+        </div>
+
+        <h4>Le dilemme de la surveillance</h4>
+
+        <div class="callout-warning">
+            <strong>Deux exigences contradictoires :</strong>
+            <ul>
+                <li><strong>Pas de fausse alarme</strong> → un avion cloué au sol à tort coûte
+                    très cher (disponibilité opérationnelle). Trop de sensibilité nuit.</li>
+                <li><strong>Pas de non-détection</strong> → rater une vraie panne peut être
+                    catastrophique. Pas assez de sensibilité nuit aussi.</li>
+            </ul>
+            Le concepteur doit trouver le bon seuil, avec le coût calculatoire le plus faible possible
+            (processeurs lents → peu de ressources disponibles pour la surveillance).
+        </div>
+
+        <h4>Catalogue des surveillances permanentes</h4>
+
+        <dl class="key-value">
+            <dt>Surveillance du courant</dt>
+            <dd>Courant généré par le calculateur vers les servocommandes — détecte les courts-circuits</dd>
+            <dt>Surveillance des capteurs</dt>
+            <dd>Câblage, alimentation, biais, valeur erronée (plausibilité)</dd>
+            <dt>Surveillance d'embarquement</dt>
+            <dd>Mouvement intempestif d'une gouverne qui part en butée sans ordre</dd>
+            <dt>Surveillance de grippage</dt>
+            <dd>Blocage mécanique d'une gouverne détecté par absence de réponse à la consigne</dd>
+            <dt>Surveillance enveloppe de vol</dt>
+            <dd>Rudder Travel Limitation (RTL) — limite l'amplitude du gouvernail à haute vitesse</dd>
+            <dt>Surveillance des oscillations</dt>
+            <dd>Détection des phénomènes de résonance structurelle (flutter)</dd>
+        </dl>
+
+        <h3>Solutions — Redondance et dissimilarité</h3>
+
+        <p>
+            Pour satisfaire les exigences EASA/FAA, deux stratégies architecturales complémentaires
+            sont combinées :
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Redondance">
+                <p>
+                    Multiplication des éléments critiques pour assurer la continuité en cas de panne :<br>
+                    • <strong>6 calculateurs</strong> dédiés aux CDVE sur l'A380<br>
+                    • <strong>4 sources de puissance</strong> indépendantes pour actionner les gouvernes<br>
+                    → Si un calculateur tombe en panne, un autre prend le relais sans interruption.
+                </p>
+            </div>
+            <div class="compare-item good" data-label="Dissimilarité">
+                <p>
+                    Utilisation d'éléments <em>différents</em> pour éviter les pannes de mode commun :<br>
+                    • Deux types de calculateurs — <strong>PRIM</strong> (PowerPC755, 66 MHz) et
+                    <strong>SEC</strong> (DSP Sharc, 40 MHz) — software <em>et</em> hardware différents<br>
+                    • Deux sortes d'actionneurs<br>
+                    • Ségrégations physiques des routes électriques et hydrauliques<br>
+                    → Un bug logiciel affectant PRIM ne peut pas affecter SEC.
+                </p>
+            </div>
+        </div>
+
+        <div class="figure-box">
+            <div style="display:flex; justify-content:center; align-items:center; gap: 1rem; padding: 1rem 0; flex-wrap: wrap;">
+                <!-- PRIM -->
+                <div style="text-align:center;">
+                    <svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="138" height="38" rx="7" fill="rgba(214,117,86,0.08)" stroke="#d67556" stroke-width="1.5"/>
+                        <text x="70" y="24" text-anchor="middle" font-family="'Inter', system-ui, sans-serif" font-size="11" fill="#dedad5">Calculateur PRIM</text>
+                    </svg>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">HW: PowerPC / SW: Equipe A</p>
+                </div>
+                <!-- Double arrow -->
+                <svg width="40" height="40" viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.4;">
+                    <line x1="22" y1="20" x2="178" y2="20" stroke="#9e9a94" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M 15 20 L 22 15.5 Q 20 20 22 24.5 Z" fill="#9e9a94"/>
+                    <path d="M 185 20 L 178 15.5 Q 180 20 178 24.5 Z" fill="#9e9a94"/>
+                </svg>
+                <!-- SEC -->
+                <div style="text-align:center;">
+                    <svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="138" height="38" rx="7" fill="rgba(91,166,160,0.1)" stroke="#5ba6a0" stroke-width="1.5"/>
+                        <text x="70" y="24" text-anchor="middle" font-family="'Inter', system-ui, sans-serif" font-size="11" fill="#dedad5">Calculateur SEC</text>
+                    </svg>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">HW: Sharc / SW: Equipe B</p>
+                </div>
+            </div>
+            <figcaption>Fig. 3 — Principe de dissimilarité matérielle et logicielle (Airbus)</figcaption>
+        </div>
+
+        <div class="callout-info">
+            <strong>Pourquoi des processeurs aussi lents ?</strong> Les calculateurs de l'A380 utilisent
+            un PowerPC755 à 66 MHz comme calculateur primaire — environ 20× moins puissant qu'un PC
+            grand public de l'époque (AMD Sempron 2650 à 1,45 GHz ≈ 25 €). Ce n'est pas un choix
+            économique : le critère est le <strong>déterminisme temporel</strong>. Un processeur moderne
+            avec caches complexes, exécution out-of-order et plusieurs cœurs est quasi-impossible à
+            certifier car son temps de réponse exact ne peut être garanti. Le calculateur avionique doit
+            répondre en un temps maximal prouvé — quoi qu'il arrive.
+        </div>
+
+        <h4>Modes dégradés — hiérarchie des lois de pilotage</h4>
+
+        <p>
+            En cas de défaillance partielle du système, l'avion bascule progressivement vers des lois
+            de pilotage simplifiées. Plus la dégradation est sévère, plus le pilote reprend la main :
+        </p>
+
+        <div class="algo-block" data-name="Hiérarchie des lois de pilotage (A320 / A380)">
+<pre><code>Lois normales  (état nominal — calculateurs PRIM actifs)
+  → Commandes sophistiquées avec protections enveloppe de vol
+  → Le pilote exprime une intention, l'ordinateur calcule la déflection optimale
+  → Protection automatique contre dépassement facteur de charge / AOA maximal
+  → Pilote ne peut PAS sortir de l'enveloppe de vol structurelle
+
+Lois alternatives  (dégradé partiel — perte d'un ou plusieurs PRIM)
+  → Certaines protections automatiques désactivées
+  → Comportement simplifié mais avion toujours gérable
+  → Le pilote doit surveiller lui-même certaines limites
+
+Lois directes  (dégradé maximal — seuls les SEC fonctionnent)
+  → Correspondance directe manche → déflection gouverne (proportionnel)
+  → Équivalent du comportement A320 première génération (années 80)
+  → Le pilote reprend l'entière responsabilité des limites d'enveloppe
+  → Aucune protection automatique active</code></pre>
+        </div>
+
+        <p class="source">Ridouard, F. — Systèmes Avioniques : Architecture, systèmes et réseau. ISAE / ENSMA, cours LIAS.</p>
+
+    </div>
+
+</body>
+</html>

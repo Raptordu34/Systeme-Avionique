@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Évaluation de la sûreté de fonctionnement — Arbres de défaillance</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Cycle en V avionique</strong> — FHA → PSSA → SSA, avec la CCA en parallèle : on descend vers l'implémentation en fixant des exigences, on remonte en vérifiant leur tenue.</li>
+            <li><strong>FHA</strong> — classe chaque défaillance fonctionnelle de MIN à CAT ; chaque niveau fixe un seuil probabiliste ($10^{-3}$ à $10^{-9}$ /h) et un DAL (A–E).</li>
+            <li><strong>FTA</strong> — méthode déductive top-down basée sur l'algèbre de Boole ; valide si composants indépendants et $\lambda t \ll 1$.</li>
+            <li><strong>Porte ET</strong> — probabilité produit $P = \lambda_1 \lambda_2$ : la redondance réduit exponentiellement la probabilité de panne.</li>
+            <li><strong>Porte OU</strong> — probabilité somme $P \approx \lambda_1 + \lambda_2$ : chaque maillon en série dégrade la fiabilité globale.</li>
+            <li><strong>X-Lane monitoring</strong> — la surveillance inter-voies réduit $P\{F/OOC\}$ de 5 ordres de grandeur en détectant les pannes non auto-détectées.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 1 — DÉMARCHE DE CONCEPTION AVIONIQUE
+        ═══════════════════════════════════════════════════ -->
+        <h3>Démarche de conception avionique</h3>
+
+        <div class="highlight-box">
+            <strong>Principe :</strong> la certification avionique impose une démonstration formelle de la sûreté, structurée en <strong>cycle en V</strong> défini par les normes ARP4754A (processus de développement) et ARP4761 (méthodes d'analyse). Les analyses de sûreté descendent avec la conception et remontent avec la vérification.
+        </div>
+
+        <p>
+            L'analogie utile est celle d'un immeuble : avant de poser la première pierre, l'architecte identifie les risques (FHA), dimensionne les fondations en conséquence (PSSA), puis vérifie que la construction tient ses promesses (SSA). La CCA s'assure qu'une cause unique — fuite de gaz, inondation — ne peut pas faire tomber plusieurs piliers simultanément.
+        </p>
+
+        <h4>Functional Hazard Assessment (FHA)</h4>
+
+        <div class="callout-info">
+            Le FHA est la <strong>première analyse</strong> réalisée. Elle part des fonctions de l'aéronef (générer de la poussée, contrôler la trajectoire…) et identifie les conséquences de chaque défaillance fonctionnelle. Elle fixe le niveau de criticité et le seuil probabiliste maximal à ne pas dépasser.
+        </div>
+
+        <p>
+            Le résultat du FHA est une classification en quatre niveaux, chacun associé à un seuil probabiliste et à un <strong>DAL (Design Assurance Level)</strong> qui fixe la rigueur du processus de développement logiciel et matériel :
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Niveau</th>
+                        <th>Abrév.</th>
+                        <th>Conséquence sur l'aéronef</th>
+                        <th>Probabilité max (/h de vol)</th>
+                        <th>DAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Minor</td>
+                        <td><span class="badge badge-green">MIN</span></td>
+                        <td>Légère augmentation de la charge de travail pilote, aucune blessure</td>
+                        <td>$10^{-3}$</td>
+                        <td>E</td>
+                    </tr>
+                    <tr>
+                        <td>Major</td>
+                        <td><span class="badge badge-blue">MAJ</span></td>
+                        <td>Réduction significative des marges de sécurité, blessures légères possibles</td>
+                        <td>$10^{-5}$</td>
+                        <td>C</td>
+                    </tr>
+                    <tr>
+                        <td>Hazardous</td>
+                        <td><span class="badge badge-orange">HAZ</span></td>
+                        <td>Grande réduction des marges, blessures graves, quelques victimes possibles</td>
+                        <td>$10^{-7}$</td>
+                        <td>B</td>
+                    </tr>
+                    <tr>
+                        <td>Catastrophic</td>
+                        <td><span class="badge badge-red">CAT</span></td>
+                        <td>Perte de l'appareil, multiples victimes</td>
+                        <td>$10^{-9}$</td>
+                        <td>A</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tip-box">
+            <strong>Moyen mnémotechnique :</strong> chaque niveau de criticité correspond à deux ordres de grandeur de probabilité en moins. MINOR = $10^{-3}$ (une chance sur mille par heure), CATASTROPHIC = $10^{-9}$ (une chance sur un milliard par heure). Pour un avion dont la vie opérationnelle est de 60 000 heures, un événement catastrophique ne devrait survenir que pour un appareil parmi 16 000 de ce type — sur toute sa durée de vie.
+        </div>
+
+        <p>
+            Le DAL conditionne directement le niveau de rigueur des processus de développement. Un DAL A exige une traçabilité complète de chaque exigence, des revues indépendantes, et une couverture de tests structurelle MC/DC (Modified Condition/Decision Coverage). À l'inverse, un DAL E n'impose pratiquement aucune contrainte formelle.
+        </p>
+
+        <h4>Preliminary System Safety Assessment (PSSA)</h4>
+
+        <div class="callout-info">
+            La PSSA traduit les objectifs globaux du FHA en <strong>exigences quantitatives sur chaque composant</strong>. C'est l'étape du « budget fiabilité » : on sait ce qu'on doit atteindre au niveau système, et on répartit cet objectif entre les sous-systèmes.
+        </div>
+
+        <p>
+            Analogie : un chef de projet dispose d'un budget total de 100 000 € et doit le répartir entre trois équipes. Si le système comporte trois calculateurs en série logique et que l'objectif global est $\lambda_{sys} \leq 10^{-9}$ /h, chaque calculateur doit contribuer au plus $\frac{10^{-9}}{3} \approx 3{,}3 \times 10^{-10}$ /h.
+        </p>
+
+        <p>Les outils quantitatifs utilisés en PSSA sont :</p>
+        <ul>
+            <li>Les <strong>arbres de défaillance (FTA)</strong> — pour calculer les probabilités de combinaisons de pannes par l'algèbre de Boole.</li>
+            <li>Les <strong>chaînes de Markov</strong> — pour modéliser les systèmes avec mémoire d'état : réparation en vol, dégradation progressive, modes de reconfiguration.</li>
+        </ul>
+
+        <h4>System Safety Assessment (SSA)</h4>
+
+        <p>
+            La SSA est la vérification <em>a posteriori</em>, réalisée une fois l'implémentation terminée. Elle utilise les taux de défaillance <strong>réels</strong> fournis par les fournisseurs de composants (bases de données MIL-HDBK-217, FIDES, ou données d'expérience en service) pour confirmer que les objectifs du PSSA sont bien atteints.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="PSSA — Préliminaire">
+                <p>Hypothèses de conception. On <strong>fixe</strong> des cibles de taux de défaillance pour chaque composant, à partir de l'objectif système.</p>
+            </div>
+            <div class="compare-item neutral" data-label="SSA — Finale">
+                <p>Données fournisseurs réelles. On <strong>vérifie</strong> que les taux de défaillance mesurés respectent les cibles du PSSA.</p>
+            </div>
+        </div>
+
+        <h4>Common Cause Analysis (CCA)</h4>
+
+        <div class="callout-warning">
+            La CCA est l'analyse <strong>la plus critique pour les architectures redondantes</strong>. Sans elle, une redondance triple peut être annulée par une seule cause commune — court-circuit sur un bus d'alimentation commun, erreur de spécification partagée, foudre touchant deux voies mal séparées. Elle vérifie l'<strong>indépendance</strong> entre les fonctions redondantes.
+        </div>
+
+        <p>La CCA se décompose en trois analyses complémentaires :</p>
+        <ol>
+            <li>
+                <strong>Particular Risk Analysis (PRA)</strong> — risques environnementaux particuliers : foudre, feu en soute, éclatement de pneu, ingestion d'oiseau, débris de turbine. Peut-il atteindre plusieurs systèmes redondants simultanément ?
+            </li>
+            <li>
+                <strong>Common Mode Analysis (CMA)</strong> — erreurs de conception ou de fabrication identiques sur plusieurs voies. Exemple classique : deux logiciels développés par la même équipe à partir de spécifications erronées contiennent le même bug, ce qui invalide la redondance logicielle.
+            </li>
+            <li>
+                <strong>Zonal Safety Analysis (ZSA)</strong> — analyse zone par zone de l'avion. Dans un même espace, des câblages de commandes hydrauliques et électriques trop proches pourraient être sectionnés ensemble par un débris ou un éclat de pale.
+            </li>
+        </ol>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 2 — FTA : PRINCIPES ET SYMBOLES
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Analyse par arbre de défaillances (FTA)</h3>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> la <em>Fault Tree Analysis</em> est une méthode <strong>déductive top-down</strong>. On part de l'événement redouté au sommet de l'arbre (ex : « perte totale du système de commandes de vol ») et on décompose récursivement les causes jusqu'aux <em>événements basiques</em> — les pannes de composants élémentaires. La probabilité de l'événement sommet est alors calculée par l'algèbre de Boole.
+        </div>
+
+        <h4>Conditions de validité</h4>
+
+        <p>La FTA dans sa forme standard n'est valide que si trois conditions sont réunies :</p>
+        <ul>
+            <li>
+                Les composants sont <strong>indépendants</strong> — la panne de l'un ne modifie pas la probabilité de panne des autres. Cette condition est vérifiée par la CCA.
+            </li>
+            <li>
+                Il n'y a <strong>pas de dépendance temporelle</strong> entre les défaillances — la séquence d'apparition des pannes n'importe pas. Si l'ordre compte (ex : un système qui ne peut se dégrader qu'après une première panne), on utilise les chaînes de Markov.
+            </li>
+            <li>
+                Le produit $\lambda \cdot t \ll 1$ — l'approximation linéaire $P\{F\} \approx \lambda t$ est valide.
+            </li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Pourquoi $\lambda t \ll 1$ ?</strong> La probabilité exacte d'une panne de loi exponentielle est $P = 1 - e^{-\lambda t}$. Pour $\lambda t$ petit, le développement limité donne $e^{-\lambda t} \approx 1 - \lambda t + \frac{(\lambda t)^2}{2} - \ldots$, donc $P \approx \lambda t$. L'erreur relative est de l'ordre de $\frac{\lambda t}{2}$. Pour $\lambda = 10^{-5}$ /h et $t = 1$ h, l'erreur est de $5 \times 10^{-6}$, parfaitement négligeable.
+        </div>
+
+        <h4>Symboles de l'arbre de défaillance</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbole</th>
+                        <th>Nom</th>
+                        <th>Description</th>
+                        <th>Exemple avionique</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>○</td>
+                        <td><strong>Événement basique</strong></td>
+                        <td>Feuille de l'arbre — composant élémentaire défaillant, interne au système</td>
+                        <td>Capteur de pression hydraulique HS</td>
+                    </tr>
+                    <tr>
+                        <td>◇</td>
+                        <td><strong>Événement non développé</strong></td>
+                        <td>Conséquences négligeables ou manque d'information pour décomposer</td>
+                        <td>Panne d'un équipement COTS non certifié</td>
+                    </tr>
+                    <tr>
+                        <td>⌂</td>
+                        <td><strong>Événement maison</strong></td>
+                        <td>Événement externe au système, prévu ou opérationnel — sans probabilité calculée</td>
+                        <td>Mise sous tension du système par le pilote</td>
+                    </tr>
+                    <tr>
+                        <td>⬭</td>
+                        <td><strong>Événement conditionnel</strong></td>
+                        <td>Condition nécessaire à l'apparition d'un mode de défaillance</td>
+                        <td>Phase de vol : atterrissage (train sorti)</td>
+                    </tr>
+                    <tr>
+                        <td>∪ arrondi</td>
+                        <td><strong>Porte OU</strong></td>
+                        <td>Sortie active si <em>au moins une</em> entrée est active</td>
+                        <td>Perte fonction si capteur 1 OU capteur 2 tombe en panne</td>
+                    </tr>
+                    <tr>
+                        <td>∩ plat</td>
+                        <td><strong>Porte ET</strong></td>
+                        <td>Sortie active si <em>toutes</em> les entrées sont actives simultanément</td>
+                        <td>Perte fonction si calculateur 1 ET calculateur 2 tombent en panne</td>
+                    </tr>
+                    <tr>
+                        <td>△</td>
+                        <td><strong>Porte NON</strong></td>
+                        <td>Inverseur — sortie active si l'entrée est inactive</td>
+                        <td>Absence du signal de confirmation de commande</td>
+                    </tr>
+                    <tr>
+                        <td>∪ double arc</td>
+                        <td><strong>Porte OU exclusif</strong></td>
+                        <td>Sortie active si <em>exactement une</em> entrée est active</td>
+                        <td>Discordance entre deux capteurs redondants</td>
+                    </tr>
+                    <tr>
+                        <td>∪ k</td>
+                        <td><strong>Vote majoritaire k/n</strong></td>
+                        <td>Sortie active si au moins $k$ entrées parmi $n$ sont actives</td>
+                        <td>Panne triplex si 2 calculateurs sur 3 sont défaillants</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 3 — OPÉRATEURS ET / OU
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Calcul de probabilités — Opérateurs logiques</h3>
+
+        <h4>Porte ET — redondance active</h4>
+
+        <div class="callout-info">
+            La porte ET modélise une <strong>redondance</strong> : le système tombe en panne seulement si <em>tous</em> les composants tombent en panne simultanément. C'est l'architecture des calculateurs de commandes de vol (FBW) : deux ou trois voies en parallèle, toutes doivent être défaillantes pour perdre la fonction.
+        </div>
+
+        <div class="theorem-box" data-label="Formule">
+            Pour deux composants indépendants $F_1$ et $F_2$ de taux de défaillance $\lambda_1$ et $\lambda_2$ :
+            <div class="formula-box">
+                $$P\{F_{SYS}\} = P\{F_1\} \cdot P\{F_2\} = \lambda_1 \lambda_2 t^2 \xrightarrow{t=1\text{h}} \lambda_1 \lambda_2$$
+                <span class="formula-label">Porte ET — deux composants indépendants</span>
+            </div>
+        </div>
+
+        <div class="proof-box">
+            $F_{SYS} = F_1 \cdot F_2$ (notation booléenne — produit $=$ ET logique).
+            Par la règle du produit conditionnel :
+            $$P\{F_1 \cdot F_2\} = P\{F_2 \mid F_1\} \cdot P\{F_1\}$$
+            $F_1$ et $F_2$ indépendants $\Rightarrow P\{F_2 \mid F_1\} = P\{F_2\}$.
+            Donc $P\{F_{SYS}\} = P\{F_1\} \cdot P\{F_2\} = \lambda_1 t \cdot \lambda_2 t = \lambda_1 \lambda_2 t^2$.
+            Pour $t = 1$ h : $P\{F_{SYS}\} = \lambda_1 \lambda_2$.
+        </div>
+
+        <div class="tip-box">
+            <strong>Intuition sur le gain en fiabilité :</strong> si $\lambda_1 = \lambda_2 = 10^{-5}$ /h, un composant seul tombe en panne avec une probabilité $10^{-5}$ par heure. Avec une redondance ET, la probabilité de panne système tombe à $10^{-10}$ — un gain de 5 ordres de grandeur. C'est précisément ce qui permet de passer du niveau MAJOR ($10^{-5}$) au niveau CATASTROPHIC ($10^{-9}$) avec une seule couche de redondance.
+        </div>
+
+        <h4>Porte OU — composants en série logique</h4>
+
+        <div class="callout-warning">
+            La porte OU modélise une <strong>mise en série logique</strong> : la défaillance d'un seul composant suffit à faire tomber le système. Chaque maillon ajouté en série (capteur → calculateur → bus → actionneur) dégrade la fiabilité globale. Analogie : une chaîne casse dès que le maillon le plus faible cède.
+        </div>
+
+        <div class="theorem-box" data-label="Formule">
+            Pour deux composants $F_1$ et $F_2$ :
+            <div class="formula-box">
+                $$P\{F_{SYS}\} = P\{F_1\} + P\{F_2\} - P\{F_1 \cdot F_2\} \approx (\lambda_1 + \lambda_2)\,t \xrightarrow{t=1\text{h}} \lambda_1 + \lambda_2$$
+                <span class="formula-label">Porte OU — approximation valide pour $\lambda t \ll 1$</span>
+            </div>
+        </div>
+
+        <div class="proof-box">
+            Par la formule d'inclusion-exclusion :
+            $$P\{F_1 + F_2\} = P\{F_1\} + P\{F_2\} - P\{F_1 \cdot F_2\} = \lambda_1 t + \lambda_2 t - \lambda_1 \lambda_2 t^2$$
+            Le terme $\lambda_1 \lambda_2 t^2$ est négligeable devant $\lambda_1 t + \lambda_2 t$ car $\lambda t \ll 1$.
+            Donc $P\{F_{SYS}\} \approx (\lambda_1 + \lambda_2)\,t$. Pour $t = 1$ h : $P\{F_{SYS}\} = \lambda_1 + \lambda_2$.
+        </div>
+
+        <h4>Comparaison ET / OU</h4>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Porte ET — Redondance">
+                <ul>
+                    <li>Probabilité <strong>produit</strong> : $P = \lambda_1 \lambda_2$</li>
+                    <li>Gain exponentiel — chaque couche de redondance multiplie l'exposant</li>
+                    <li>Ex : $\lambda = 10^{-5}$ /h $\Rightarrow P = 10^{-10}$ /h</li>
+                    <li>Utilisé pour les architectures duplex et triplex</li>
+                </ul>
+            </div>
+            <div class="compare-item bad" data-label="Porte OU — Série logique">
+                <ul>
+                    <li>Probabilité <strong>somme</strong> : $P = \lambda_1 + \lambda_2$</li>
+                    <li>La fiabilité se dégrade à chaque maillon ajouté</li>
+                    <li>Ex : $\lambda = 10^{-5}$ /h $\Rightarrow P = 2 \times 10^{-5}$ /h</li>
+                    <li>Représente la chaîne de traitement série du signal</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 4 — EXEMPLE SYSTÈME TRIPLEX
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exemple : système triplex</h3>
+
+        <p>
+            Un système triplex comporte trois calculateurs <em>identiques</em> ($\lambda_1 = \lambda_2 = \lambda_3 = \lambda$) en parallèle avec <strong>vote majoritaire 2/3</strong> : le système tombe en panne dès que deux calculateurs sur trois sont défaillants simultanément. Le troisième seul ne peut plus maintenir la fonction.
+        </p>
+
+        <div class="callout-info">
+            Le vote 2/3 garantit que si un seul calculateur est défaillant, les deux autres le mettent en minorité et maintiennent la fonction. C'est l'architecture des commandes de vol du Rafale, de l'A320 et du B777, et des ordinateurs de guidage d'Ariane 5. Elle cumule deux avantages : <strong>haute fiabilité</strong> (panne d'ordre 2) et <strong>détection de la voie défaillante</strong> (la voie en minorité est identifiée).
+        </div>
+
+        <p>
+            L'expression booléenne de la panne système — au moins 2 défaillances parmi 3, soit $\binom{3}{2} = 3$ combinaisons :
+        </p>
+
+        <div class="formula-box">
+            $$F_{SYS} = F_1 F_2 + F_1 F_3 + F_2 F_3$$
+            <span class="formula-label">Panne si au moins 2 calculateurs sur 3 sont défaillants</span>
+        </div>
+
+        <p>Par la formule d'inclusion-exclusion :</p>
+
+        <div class="formula-box">
+            $$P\{F_{SYS}\} = \underbrace{P\{F_1 F_2\}}_{(\lambda t)^2} + \underbrace{P\{F_1 F_3\}}_{(\lambda t)^2} + \underbrace{P\{F_2 F_3\}}_{(\lambda t)^2} - \underbrace{P\{F_1 F_2 F_3\}}_{(\lambda t)^3}$$
+        </div>
+
+        <div class="formula-box">
+            $$P\{F_{SYS}\} = 3(\lambda t)^2 - (\lambda t)^3 \approx 3(\lambda t)^2 \xrightarrow{t=1\text{h}} 3\lambda^2$$
+            <span class="formula-label">Le terme d'ordre 3 est négligeable — Pour $t = 1$ h : $P\{F_{SYS}\} = 3\lambda^2$</span>
+        </div>
+
+        <div class="tip-box">
+            <strong>Comparaison des architectures :</strong> pour $\lambda = 10^{-5}$ /h, un simplex a $P = 10^{-5}$ /h, un triplex vote 2/3 a $P = 3 \times 10^{-10}$ /h — soit un gain de 5 ordres de grandeur. Ce calcul justifie directement le choix d'architecture lors de la PSSA.
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">$\lambda$</span>
+                <span class="metric-label">Simplex (1/1)</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">$\lambda^2$</span>
+                <span class="metric-label">Duplex ET (2/2)</span>
+            </div>
+            <div class="metric-card good">
+                <span class="metric-value">$3\lambda^2$</span>
+                <span class="metric-label">Triplex vote 2/3</span>
+            </div>
+        </div>
+
+        <p class="inline-note">
+            Note : le triplex (vote 2/3) est légèrement moins fiable qu'un duplex ET pur ($\lambda^2 < 3\lambda^2$), mais offre en plus la <strong>détection et isolation</strong> de la voie défaillante. Le duplex ET pur se passiverait entièrement sans identifier la voie en cause.
+        </p>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 5 — EXERCICE 10
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exercice 10 — Simplification de chaîne</h3>
+
+        <div class="highlight-box">
+            <strong>Énoncé :</strong> un système de commandes possède 4 calculateurs (C1 à C4) et 2 actionneurs (A1, A2). C1 et C2 pilotent A1 ; C3 et C4 pilotent A2. Un seul calculateur par groupe est actif ; en cas de panne, un autre prend le relais (<em>hot standby</em>). Déterminer la probabilité de panne totale en une heure en ne retenant que les <strong>chemins de défaillance dominants</strong>.
+        </div>
+
+        <div class="callout-info">
+            <strong>Chemin dominant :</strong> dans un arbre complexe, on ne retient que les coupes minimales qui causent la panne avec le <em>minimum de composants défaillants</em> (ordre le plus bas en $\lambda$) et qui impliquent les composants aux $\lambda$ les plus élevés. Les chemins d'ordre supérieur sont négligeables devant les chemins d'ordre inférieur car $\lambda t \ll 1$.
+        </div>
+
+        <h4>Analyse de la structure</h4>
+
+        <ul>
+            <li>
+                <strong>Sous-système 1 :</strong> C1 ET C2 doivent tous deux être défaillants pour que le groupe calculateur 1 soit perdu. La perte du sous-système 1 survient si (C1 ET C2 défaillants) OU (A1 défaillant seul).
+            </li>
+            <li>
+                <strong>Sous-système 2 :</strong> structure identique avec C3, C4 et A2.
+            </li>
+            <li>
+                <strong>Système global :</strong> panne totale si sous-système 1 ET sous-système 2 sont tous deux perdus (porte ET au sommet).
+            </li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Méthode des coupes minimales :</strong> une coupe minimale (<em>Minimal Cut Set</em>) est un ensemble minimal de composants dont la défaillance simultanée provoque la panne système. L'ordre d'une coupe (nombre de composants impliqués) détermine sa contribution dominante : une coupe d'ordre 1 domine sur l'ordre 2, qui domine sur l'ordre 3, etc. Pour ne garder que les chemins dominants, on identifie d'abord les coupes de plus bas ordre, puis on élimine celles dont les composants ont de petits $\lambda$.
+        </div>
+
+        <p>
+            Les coupes minimales dominantes pour ce système sont donc les paires (Ci, Cj) avec les $\lambda$ les plus élevés, et les actionneurs seuls si leur $\lambda$ est plus élevé que $\lambda_{Ci} \cdot \lambda_{Cj}$. La probabilité de panne totale est la somme des probabilités des coupes dominantes d'ordre le plus bas.
+        </p>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 6 — EXERCICE 11 : X-LANE MONITORING
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exercice 11 — Système duplex avec X-Lane monitoring</h3>
+
+        <h4>Architecture</h4>
+
+        <div class="highlight-box">
+            <strong>X-Lane monitoring (surveillance inter-voies) :</strong> dans un système duplex, chaque calculateur envoie ses sorties intermédiaires à l'autre voie, qui compare et détecte toute divergence. Si une voie détecte une divergence, elle passivise la voie défaillante. Si aucune voie ne peut se désigner comme défaillante (les deux divergent), le système entier se passivise et le pilote reprend la main manuellement.
+        </div>
+
+        <p>Paramètres de l'exercice :</p>
+
+        <dl class="key-value">
+            <dt>Architecture</dt>          <dd>Duplex — 2 voies identiques calculant en parallèle</dd>
+            <dt>$\lambda_{voie}$</dt>       <dd>$50 \text{ PPM/h} = 50 \times 10^{-6}$ /h</dd>
+            <dt>$c$ (auto-détection)</dt>   <dd>$0{,}9$ — 90 % des pannes détectées par monitoring interne</dd>
+            <dt>Panne détectée (F/P)</dt>   <dd><span class="badge badge-blue">MAJOR</span> — pilote passe en contrôle manuel</dd>
+            <dt>Panne non détectée (F/OOC)</dt> <dd><span class="badge badge-orange">HAZARDOUS</span> — actionneur reçoit des commandes erronées</dd>
+        </dl>
+
+        <h4>Calcul de $P\{F/P\}$ — passivation complète du système</h4>
+
+        <div class="callout-info">
+            <strong>F/P (Fail/Passive) :</strong> le système se passivise complètement. La fonction est perdue, mais aucune commande erronée n'est envoyée. Le pilote est alerté et reprend le contrôle manuel. C'est une défaillance <em>détectée et annoncée</em> — conséquence MAJOR.
+        </div>
+
+        <p>
+            La passivation complète survient quand les deux voies sont passivées. Quelle que soit la combinaison — auto-détection ou détection par X-Lane — les deux voies doivent tomber en panne. En termes de probabilité, c'est toujours un événement d'ordre 2 (deux défaillances nécessaires) :
+        </p>
+
+        <div class="formula-box">
+            $$P\{F/P\} = \left[c\,\lambda_v t + (1-c)\,\lambda_v t\right] \cdot \lambda_v t = (\lambda_v t)^2$$
+            <span class="formula-label">La passivation complète est un événement d'ordre 2 — les deux voies doivent tomber en panne</span>
+        </div>
+
+        <p class="inline-note">
+            Le facteur entre crochets vaut $\lambda_v t$ : qu'une voie tombe en panne de manière auto-détectée ou non, sa probabilité de défaillance reste $\lambda_v t$. Le X-Lane n'influe pas sur $P\{F/P\}$.
+        </p>
+
+        <h4>Calcul de $P\{F/OOC\}$ — commandes erronées non détectées</h4>
+
+        <div class="callout-danger">
+            <strong>F/OOC (Fail/Out Of Control) :</strong> une voie est défaillante ET sa défaillance n'est pas détectée. L'actionneur reçoit des commandes erronées sans que le pilote soit alerté. C'est le scénario HAZARDOUS le plus grave — une déflection de gouverne non commandée.
+        </div>
+
+        <p>
+            Ce scénario requiert la conjonction de trois conditions indépendantes :
+        </p>
+        <ol>
+            <li>La voie 1 tombe en panne — probabilité $\lambda_v t$.</li>
+            <li>La panne n'est pas auto-détectée par son monitoring interne — probabilité $(1-c) = 0{,}1$.</li>
+            <li>Le X-Lane monitoring ne détecte pas non plus la divergence — ce qui nécessite que la voie 2 soit elle aussi défaillante et non détectée, car autrement la voie 2 saine détecterait la divergence et passiviserait le système.</li>
+        </ol>
+
+        <div class="formula-box">
+            $$P\{F/OOC\} = \bigl[(1-c)\,\lambda_v t\bigr]^2 = (1-c)^2\,(\lambda_v t)^2$$
+            <span class="formula-label">Avec X-Lane — panne non détectée des deux voies — ordre 2 pondéré par $(1-c)^2$</span>
+        </div>
+
+        <div class="tip-box">
+            <strong>Impact du taux de couverture $c$ :</strong> la probabilité d'OOC est réduite d'un facteur $(1-c)^2 = 0{,}01$ par rapport à une simple double panne. Avec $c = 0{,}9$ : $(1-c)^2 = 0{,}01$ — soit deux ordres de grandeur gagnés grâce au seul taux de couverture. Un bon monitoring est aussi efficace qu'un doublement de la fiabilité des composants.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             SECTION 7 — EXERCICE 12 : SANS X-LANE
+        ═══════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exercice 12 — Système duplex sans X-Lane monitoring</h3>
+
+        <div class="highlight-box">
+            <strong>Variante :</strong> le système est identique à l'exercice 11, mais les deux voies n'échangent plus leurs informations. Chaque voie ne peut détecter que ses propres pannes internes (taux $c = 0{,}9$), mais ne peut plus détecter la défaillance de l'autre voie.
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Avec X-Lane (Ex. 11)">
+                <ul>
+                    <li>Voie 1 tombe en panne, non auto-détectée → la voie 2 compare et détecte la divergence par X-Lane</li>
+                    <li>Détection possible même si monitoring interne a raté</li>
+                    <li>F/OOC nécessite une double panne non détectée — <strong>ordre 2</strong></li>
+                </ul>
+            </div>
+            <div class="compare-item bad" data-label="Sans X-Lane (Ex. 12)">
+                <ul>
+                    <li>Voie 1 tombe en panne, non auto-détectée → personne d'autre ne peut le détecter</li>
+                    <li>Le système continue avec une seule voie défaillante envoyant des commandes erronées</li>
+                    <li>F/OOC se produit avec une seule panne non détectée — <strong>ordre 1</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Différence fondamentale :</strong> sans X-Lane, une seule voie défaillante non auto-détectée suffit à envoyer des commandes erronées, car il n'existe plus de mécanisme externe pour détecter sa divergence. Le scénario F/OOC devient un événement d'<strong>ordre 1</strong> au lieu d'ordre 2.
+        </div>
+
+        <div class="formula-box">
+            $$P\{F/OOC\}_{\text{sans X-Lane}} = (1-c)\,\lambda_v t \xrightarrow{t=1\text{h}} (1-c)\,\lambda_v$$
+            <span class="formula-label">Sans X-Lane — une seule panne non auto-détectée suffit — événement d'ordre 1</span>
+        </div>
+
+        <h4>Comparaison numérique</h4>
+
+        <p>Pour $\lambda_v = 50 \times 10^{-6}$ /h, $c = 0{,}9$, $t = 1$ h :</p>
+
+        <dl class="key-value">
+            <dt>$P\{F/OOC\}$ avec X-Lane</dt>
+            <dd>$(1-c)^2 \cdot \lambda_v^2 = (0{,}1)^2 \times (50 \times 10^{-6})^2 = 2{,}5 \times 10^{-11}$ /h</dd>
+            <dt>$P\{F/OOC\}$ sans X-Lane</dt>
+            <dd>$(1-c) \cdot \lambda_v = 0{,}1 \times 50 \times 10^{-6} = 5 \times 10^{-6}$ /h</dd>
+            <dt>Facteur d'amélioration</dt>
+            <dd>$\frac{5 \times 10^{-6}}{2{,}5 \times 10^{-11}} = 2 \times 10^{5}$ — soit 5 ordres de grandeur</dd>
+        </dl>
+
+        <div class="callout-danger">
+            Sans X-Lane, $P\{F/OOC\} = 5 \times 10^{-6}$ /h dépasse largement le seuil HAZARDOUS de $10^{-7}$ /h — le système ne peut pas être certifié. Avec X-Lane, $P\{F/OOC\} = 2{,}5 \times 10^{-11}$ /h est très en-dessous du seuil CATASTROPHIC de $10^{-9}$ /h. Le X-Lane monitoring est donc ici une exigence de certification, pas une option.
+        </div>
+
+        <p class="source">Cours Systèmes Avioniques — ISAE ENSMA, 2025/2026. Slides 189–212.</p>
+
+    </div><!-- fin .detailed-content -->
+
+</body>
+</html>

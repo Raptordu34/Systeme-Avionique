@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>IMA — Définition & Principes</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Définition</strong> — L'IMA (Integrated Modular Avionics) découpe l'avionique en sous-systèmes partageant des ressources de calcul et de communication standardisées, au lieu d'avoir un équipement dédié par fonction.</li>
+            <li><strong>Origines</strong> — Concept issu des projets PAMELA et VICTORIA ; d'abord sur Boeing B777 et Dassault Rafale, puis Airbus A380, A400M, A350.</li>
+            <li><strong>Trois piliers</strong> — (1) pas de matériel spécifique par fonction, (2) réseau multiplexé haut débit partagé, (3) calculateurs standardisés configurables pour différentes applications.</li>
+            <li><strong>Architecture physique</strong> — Modules LRM (<em>Line Replaceable Modules</em>) dans des baies, reliés en interne par un bus <em>fond de panier</em> (backplane), gérés par un OS ARINC 653.</li>
+            <li><strong>Avantages clés</strong> — Réduction du poids, du câblage, du nombre de fournisseurs et des temps de maintenance ; certification facilitée par la standardisation logicielle.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <h3>Définition et origines</h3>
+
+        <div class="highlight-box">
+            <strong>Integrated Modular Avionics (IMA) :</strong> Architecture avionique dans laquelle le système est <em>découpé en plusieurs sous-systèmes fonctionnels</em> partageant des ressources d'exécution (calculateurs) et de communication (réseau) communes, standardisées et non dédiées à une application particulière.
+        </div>
+
+        <p>
+            Avant l'IMA, chaque fonction avionique disposait de son propre équipement dédié — c'est l'architecture <strong>fédérée</strong>. Imaginez un immeuble où chaque locataire possède son propre générateur, sa propre chaudière et son propre réseau téléphonique : c'est coûteux, volumineux et difficile à entretenir. L'IMA est l'équivalent d'un immeuble moderne avec des ressources mutualisées — une seule centrale électrique, un seul réseau — chaque appartement restant pourtant parfaitement isolé des autres.
+        </p>
+
+        <div class="callout-info">
+            <strong>Origines du concept :</strong> L'IMA est issu des projets de recherche européens <strong>PAMELA</strong> et <strong>VICTORIA</strong>, qui ont défini les bases théoriques du partage de ressources en avionique embarquée. Le concept a ensuite été industrialisé par Boeing (B777) et Dassault Aviation (Rafale) dès les années 1990, avant d'être adopté par Airbus sur l'A380, l'A400M et l'A350.
+        </div>
+
+        <h3>Les trois piliers de l'IMA</h3>
+
+        <p>L'IMA repose sur trois principes complémentaires qui se renforcent mutuellement :</p>
+
+        <div class="highlight-box">
+            <strong>Pilier 1 — Concept (matériel générique) :</strong> Pas de développement de matériel <em>spécifique</em> pour un système avionique donné. Un même module physique peut accueillir plusieurs fonctions de nature différente, simplement par configuration logicielle.
+        </div>
+
+        <div class="highlight-box">
+            <strong>Pilier 2 — Réseau (communication partagée) :</strong> Utilisation d'un réseau <em>multiplexé</em> à bon débit permettant à tous les modules de communiquer via un média commun, au lieu de liaisons point-à-point dédiées par paire d'équipements.
+        </div>
+
+        <div class="highlight-box">
+            <strong>Pilier 3 — Système (calculateurs standardisés) :</strong> Les calculateurs sont <em>standardisés</em> (non spécifiques) et <em>configurables</em> pour exécuter différentes applications. La même plateforme matérielle peut héberger des fonctions critiques variées selon sa configuration.
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — virtualisation informatique :</strong> C'est exactement le principe de la virtualisation en informatique. Au lieu d'un serveur physique par application, on mutualise : un seul serveur puissant héberge plusieurs machines virtuelles isolées. En IMA, un calculateur standardisé héberge plusieurs <em>partitions logicielles</em> séparées par le mécanisme de ségrégation. Les partitions sont les "machines virtuelles" de l'avionique.
+        </div>
+
+        <h3>Architecture physique — baies et modules</h3>
+
+        <p>
+            Physiquement, les systèmes IMA sont organisés en <strong>baies</strong> (racks avioniques) dans lesquelles s'insèrent des <strong>modules LRM</strong> (<em>Line Replaceable Modules</em>). Ces modules se connectent au châssis via un <strong>bus fond de panier</strong> (backplane bus). L'ensemble est géré par un système d'exploitation avionique standardisé.
+        </p>
+
+        <ul>
+            <li><strong>Baies (racks) :</strong> Structures mécaniques dans la soute avionique ; les modules s'y glissent sur des guides et se connectent automatiquement au fond de panier.</li>
+            <li><strong>LRM (Line Replaceable Modules) :</strong> Unités modulaires enfichables de type <em>carte électronique</em>. En cas de panne, on retire le module défectueux et on le remplace sans démonter la baie entière — d'où le gain en temps de maintenance.</li>
+            <li><strong>Bus fond de panier (backplane) :</strong> Bus de communication interne à la baie reliant tous les modules entre eux. Dans les architectures modernes (Airbus), c'est le bus <code>ARINC 659</code> ; dans les premières générations (Boeing), il était propriétaire.</li>
+            <li><strong>OS avionique (ARINC 653) :</strong> Système d'exploitation qui gère le partitionnement <em>temporel</em> (chaque application s'exécute dans sa fenêtre de temps) et <em>spatial</em> (isolation mémoire stricte) des applications sur chaque module.</li>
+            <li><strong>Diminution du nombre de fournisseurs :</strong> La standardisation des modules réduit le nombre de fournisseurs différents, simplifiant la chaîne d'approvisionnement et de qualification.</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>ARINC 653 — le garant de l'isolation :</strong> Cette norme définit les interfaces entre les applications et l'OS embarqué (les <em>APEX services</em>). Elle garantit l'indépendance vis-à-vis du matériel (une application certifiée sur A380 peut être réutilisée sur A350 sans recertification complète), la ségrégation des partitions logicielles, et l'absence d'accès direct aux entrées/sorties — tout accès passe par l'OS.
+        </div>
+
+        <div class="callout-warning">
+            <strong>Ségrégation — point critique de certification :</strong> Sur un même calculateur IMA cohabitent des applications de niveaux de criticité (<strong>DAL — Design Assurance Level</strong>) différents, allant de DAL A (catastrophique) à DAL D (mineur). La preuve formelle que la défaillance d'une application DAL D ne peut pas contaminer une application DAL A est une exigence de certification obligatoire et constitue la principale difficulté technique de l'IMA.
+        </div>
+
+        <h3>Évolution historique — trois générations</h3>
+
+        <p>L'IMA a évolué en trois générations, chacune levant les limitations de la précédente. La progression va d'une intégration partielle et propriétaire vers une architecture ouverte et inter-domaines.</p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Caractéristique</th>
+                        <th>Génération 1</th>
+                        <th>Génération 2</th>
+                        <th>Génération 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Fournisseurs</strong></td>
+                        <td>Unique fournisseur de modules</td>
+                        <td>Plusieurs fournisseurs</td>
+                        <td>Modules standardisés multi-fournisseurs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fonctionnalités</strong></td>
+                        <td>Intégrations simplistes</td>
+                        <td>Fonctionnalités développées</td>
+                        <td>Développées <em>inter-domaines</em></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bus backplane</strong></td>
+                        <td>Non standardisé (propriétaire)</td>
+                        <td>A659</td>
+                        <td>Standardisé (A659 + AFDX)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Architecture des racks</strong></td>
+                        <td>Cloisonnés</td>
+                        <td>Partiellement décloisonnés</td>
+                        <td>Architecture ouverte (APEX / ARINC 653)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Exemples avions</strong></td>
+                        <td>B777 Smiths EU, B777 Honeywell AIMS, VFW 614 EFCS</td>
+                        <td>B777 Card Files, Honeywell EPIC, EFCS NEVADA Cabinet</td>
+                        <td>A380, A400M, NEVADA Cabinet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="inline-note">La Génération 3, appelée <strong>"Open IMA"</strong> chez Airbus, marque le passage d'une vision centrée équipement vers une vision centrée système — voir ci-dessous.</p>
+
+        <h3>Avantages de l'IMA</h3>
+
+        <p>L'adoption de l'IMA est motivée par des gains mesurables sur l'ensemble du cycle de vie de l'avion.</p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Exploitation">
+                <p>Amélioration de la <strong>fiabilité</strong> et de la <strong>maintenance</strong>. Réduction du poids de l'avion et libération de place dans les baies avioniques (moins de boîtiers dédiés = moins de volume occupé).</p>
+            </div>
+            <div class="compare-item good" data-label="Maintenance pratique">
+                <p>Installations plus simples, erreurs <strong>diagnostiquées rapidement</strong>, réduction du câblage et du nombre de connecteurs. Résultat direct : <strong>réduction des temps de réparation</strong> au sol.</p>
+            </div>
+            <div class="compare-item good" data-label="Coûts de développement">
+                <p>Réduction des coûts récurrents et non-récurrents par la <strong>standardisation des composants</strong> et la réduction du nombre de fournisseurs à qualifier et à gérer contractuellement.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Contrainte de certification">
+                <p>La cohabitation d'applications de DAL différents sur un même calculateur introduit des <strong>nouvelles dépendances de certification</strong> — la preuve d'isolation est une obligation réglementaire complexe, absente de l'architecture fédérée.</p>
+            </div>
+        </div>
+
+        <h3>Deux implémentations de référence</h3>
+
+        <p>
+            Les deux implémentations les plus étudiées illustrent deux approches historiquement distinctes du même concept IMA. Elles sont détaillées dans les sections <em>Modules</em> et <em>Réseau</em> — voici leur portrait synthétique.
+        </p>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>Boeing B777 — Première IMA industrielle</strong>
+                <span class="badge badge-orange" style="margin-top:0.5rem;display:inline-block">Pionnière (~1995)</span>
+                <br><br>
+                Calculateurs partagés <strong>CPM</strong> dans des étagères (racks), reliés par le bus <strong>ARINC 629</strong> (2–8 Mbits/s sur paire torsadée). Protocole d'accès au bus : <strong>CSMA-CA</strong> (écoute du support, réservation optionnelle, transmission, ACK). Architecture en cabinets avec bus fond de panier ARINC 859. Ordonnancement <em>statique</em> des fonctions et des messages.
+            </div>
+            <div class="highlight-box">
+                <strong>Airbus A380 — Open IMA</strong>
+                <span class="badge badge-blue" style="margin-top:0.5rem;display:inline-block">Référence moderne (~2005)</span>
+                <br><br>
+                Réseau avionique basé sur l'<strong>AFDX</strong> (Avionics Full DupleX switched Ethernet). Modules <strong>CPIOM</strong> (Core Processing &amp; I/O, 8 références) et <strong>IOM</strong> (I/O pur, 1 référence). OS normalisé <strong>ARINC 653</strong>, API standardisées (APEX), indépendance hardware/software. Couvre cockpit, énergie, cabine et utilitaires.
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Le changement de paradigme illustré :</strong> L'avionique classique raisonne en termes d'<em>équipements</em> — chaque boîtier incarne une et une seule fonction. L'IMA raisonne en termes de <em>systèmes</em> — une plateforme commune héberge de multiples fonctions par configuration logicielle. Ce glissement est visible physiquement : l'A380 dispose de quelques grandes baies CPIOM/IOM là où un avion de génération antérieure en aurait eu des dizaines de boîtiers distincts répartis dans l'avion.
+        </div>
+
+    </div>
+
+</body>
+</html>

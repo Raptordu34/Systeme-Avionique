@@ -1,0 +1,411 @@
+Systèmes Avioniques
+Architecture, systèmes et réseau
+
+Frédéric Ridouard
+
+Plan
+• Introduction
+• Généralités
+
+• Historique
+• Architectures
+• Évolution des besoins
+
+• Integrated Modular Avionics (IMA)
+• Définition
+• Les modules
+• Le réseau
+
+• Avionics Full DupleX switched ethernet (AFDX)
+• Définition
+• Composants
+• Autres propriétés
+
+2
+
+Introduction
+• Système Avionique
+• Avion : Système embarqué
+
+• Partie informatique
+• Informatique : Evolution majeure
+
+• Informatisation des fonctions
+• Besoin exponentiel de données
+
+3
+
+LIAS
+
+Ridouard F.
+
+Introduction
+• Communications « Sol/Bord » :
+• Compagnie aérienne :
+• Maintenance
+• Service
+
+• Aide au pilotage :
+• Contrôle aérien
+• Position, navigation
+
+• Communications passagers (IFE : In Flight Entertainment) :
+• Vidéo à la demande / Jeux vidéo;
+• Téléphonie;
+• Internet, etc..
+
+• Communications des systèmes avioniques :
+• Echanges entre les différents systèmes composant l’avion
+4
+
+LIAS
+
+Ridouard F.
+
+Introduction
+• Objectifs de ce cours
+• Présentation générale des systèmes avioniques
+
+• Historique
+• Architecture actuelle
+
+• Choix technologiques (Airbus)
+
+5
+
+LIAS
+
+Ridouard F.
+
+Plan
+• Introduction
+• Généralités
+
+• Historique
+• Architectures
+• Évolution des besoins
+
+• Integrated Modular Avionics (IMA)
+• Définition
+• Les modules
+• Le réseau
+
+• Avionics Full DupleX switched ethernet (AFDX)
+• Définition
+• Composants
+• Autres propriétés
+
+6
+
+LIAS
+
+Ridouard F.
+
+Historique : les avions de ligne
+• Le nombre de passagers :
+• 1920 : entre 8 et 10
+• 1930-1940 : entre 10 et 40
+• 1950 : une centaine
+• 1970-80 : deux à trois cent
+• 2000 : cinq cent
+
+• Vitesse maximale (Mach 1 = 1224km/h):
+• 1920 : 125km/h
+• 1930-1940 : 300-500km/h
+
+• 1950 : 800-900km/h
+• 1970-80 : Mach 0,8
+• 2000 : Mach 0,89
+7
+
+Historique : les avions de ligne
+•
+
+Rayon d’action :
+• 1920 : 1000km
+• 1930-1940 : entre 3000 et 5000km
+• 1950 : entre 6000 et 7000km
+
+• 1970-80 : 10000 à 13000km
+• 2000 : 15000km
+
+• Poids :
+• 1920 : 1,9T (à vide 1,2T)
+• 1930-1940 : 11T (à vide : 7,5T)
+• 1950 : 60T (à vide 35T)
+• 1970-80 : 100T (à vide 50T)
+• 2000 : 575T (370T)
+8
+
+Historique : les avions de ligne
+Trafic aérien (Académie de l’air et de l’espace) :
+
+9
+
+Historique : les avions de ligne
+• Le cas particulier du concorde (1969) :
+• Passagers : 100
+• Vitesse : Mach 2,02 (2,23)
+• Rayon d’action : 6200km
+• Poids : 185T (à vide 79,3T)
+
+10
+
+Historique : les avions de ligne
+• Confort :
+Fokker F.II
+
+Douglas DC-3
+
+Caravelle SE 210
+
+Boeing 747
+A350
+
+11
+
+Historique : évolution du contrôle de vol
+
+• Le contrôle de vol à court terme (commandes de vol) :
+• Définition : Système qui fait le lien entre le pilote et les
+gouvernes aérodynamiques (modification de la trajectoire de
+l'avion).
+• Composé :
+• d’organes de pilotage (manche par exemple);
+• d'actionneurs pour bouger les gouvernes;
+• d'un système de transmission plus ou moins sophistiqué
+entre les organes de pilotage et les actionneurs.
+
+12
+
+Historique : évolution du contrôle de vol
+
+Becquet
+
+Palonnier
+Gouvernail
+
+Volets
+Lames
+
+Gouvernes
+
+Contrôle Surface
+13
+
+Historique : évolution du contrôle de vol
+
+14
+
+Historique : évolution du contrôle de vol
+• Jusqu’aux années 60 (avions légers) :
+• liaison entre le manche, le palonnier et les gouvernes (direction,profondeur…)
+réalisée à l’aide de câbles
+• le pilote exerce directement sa force sur les gouvernes.
+
+Câble mécanique
+assistance
+Commande classique « à câble »
+15
+
+Historique : évolution du contrôle de vol
+• Années 70/80 (avions plus lourds) : A300/310
+
+• Ajout des systèmes hydrauliques d’assistance permettant ainsi de démultiplier
+la force du pilote.
+Servocommande
+Câble mécanique
+SM
+Pilote
+automatique
+
+Servomoteur
+Liaison électrique
+
+Commande classique « servomoteur » (A300 / A310)
+
+• Un ServoMoteur (ou servo-moteur) est un moteur électrique conçu pour
+générer le mouvement précis d'un élément mécanique selon une commande
+externe.
+• Une servocommande est un système permettant de contrôler un mécanisme. Il
+permet un contrôle très précis de la position. Les servocommandes utilisent le
+principe de retour de force négatif (negative feedback) : la valeur électrique
+reçue est comparée à la position du système contrôlé, en utilisant un
+potentiomètre intégré par exemple, et la différence de valeur est amplifiée
+16
+puis utilisée pour actionner un moteur qui va corriger l'erreur (la différence).
+
+Historique : évolution du contrôle de vol
+• Les années 80… ou presque : A320
+• Remplacement des câbles, poulies, renvois et autres ressorts de tension par un
+système basé sur de simples fils électriques.
+
+Liaison
+électrique
+Pilote
+automatique
+
+Servocommande
+
+Liaison électrique
+
+Commande électriques « lois directes »
+
+Remarque : le Concorde possédait déjà
+(en 1969) des commandes de vols électriques
+17
+
+Historique : évolution du contrôle de vol
+• Les années 80/90 : A320/ A330/ A340
+• Système basé sur des ordinateurs et de simples fils électriques.
+Servocommande
+Liaison électrique
+Pilote
+automatique
+
+Cde de vol
+Liaison électrique
+
+Commande électriques « lois normales » (A320 / A330 / A340)
+
+• Les commandes de vol électriques sont une évolution des commandes de vol
+traditionnelles.
+
+18
+
+Historique : évolution du contrôle de vol
+• Les années 2000 : A380/ A400M/ A350
+
+19
+
+Historique : évolution du contrôle de vol
+• Les années 2000 : A380/ A400M/ A350
+
+• L’ordinateur de commande de vol est prédominant (fly-by-wire) :
+• Calculs
+• Monitoring
+
+Autres informations :
+
+• Gyromètres (vitesses de rotation autour des trois axes tangage, roulis, lacet)
+• Accéléromètres (accélérations verticales et horizontales)
+20
+
+Historique : évolution du contrôle de vol
+• Les années 2000 : A380/ A400M/ A350
+• Rôles des calculateurs :
+• Asservir les gouvernes
+• Calcul des lois de pilotage (consigne)
+• Gérer l’aspect multi-calculateur
+• Monitoring (I/O, auto-surveillances, pannes…)
+• Alléger le travail du pilote (e.g. Reconfiguration)
+• Surveiller le pilote...
+
+21
+
+Historique : évolution du contrôle de vol
+• Les années 2000 : A380/ A400M/ A350 :
+• Certifications (EASA, FAA) (exemples de spécifications) :
+• Le système doit traduire en ordres de déflection des gouvernes les ordres
+de pilotage venant du pilote ou de pilote automatique (facteur de charge)
+
+• Le système doit maintenir l'avion dans son enveloppe de vol quelles que
+soient les commandes du pilote ou du pilote automatique
+• Le système doit être déterministe (fonctionnellement et temporellement)
+
+22
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA) :
+• Exemple de spécifications, pannes catastrophiques:
+• La perte de contrôle à la fois des ailerons et des spoilers
+• La perte de contrôle de la profondeur
+• Panne oscillatoire en résonance structurelle
+• La perte de contrôle latéral après une perte d’un moteur
+• La perte de contrôle des spoilers (becquet), des ailerons, de la direction et
+de la profondeur ne doit pas être causée par une panne unique
+• Rédaction du « Safety System Analysis » :
+• Evaluation de l’effet de chaque panne
+• Aucune panne simple ne peut avoir des conséquences catastrophiques
+
+« Plus c’est grave, plus cela doit être improbable »
+23
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA), solutions :
+• Redondance
+• 6 calculateurs sur l’A380 dédiés aux CDVE
+• 4 sources de puissance pour actionner les gouvernes
+• Modes dégradés :
+• Lois de pilotage :
+• Lois normales
+• Lois alternatives
+• Lois directes
+
+24
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA), solutions :
+• Dissimilaritées :
+• Deux sortes d’actionneurs
+• Deux types de calculateurs :PRIM et SEC
+• Software et Hardware différents
+• SEC plus simple que PRIM
+• Ségrégations physiques
+• Routes électriques et hydrauliques
+• Emplacement des calculateurs
+
+25
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA), solutions :
+• Dissimilaritées :
+
+26
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA), solutions :
+• Surveillances en permanence :
+• Capteurs
+• Actionneurs
+• Calculateurs
+•…
+
+27
+
+Historique : évolution du contrôle de vol
+• Surveillance :
+• confirmer pendant un intervalle de temps de longueur t qu’une certaine
+quantité est supérieure à un seuil :
+• Surveillance du courant :
+• Généré par le calculateur en direction des servocommandes
+• Surveillance des capteurs :
+• Câblage, alimentation, biais, valeur erronée…
+• Surveillance d’embarquement :
+• Mouvement intempestif d’une gouverne qui part en butée
+• Surveillance de grippage :
+• Blocage de gouverne
+• Surveillance de l’enveloppe de vol :
+• Rudder Travel Limitation
+• Surveillance d’oscillations des gouvernes :
+• Phénomènes de résonance
+28
+
+Historique : évolution du contrôle de vol
+• Certifications (EASA, FAA), contraintes :
+• Pas de fausse alarme :
+• Disponibilité opérationnelle
+• Pas de non détection :
+• Conséquences catastrophiques
+• Coûts calculatoires :
+• Le plus faible possible
+• Exemple A380 calculateurs (flight Control & Guidance Computer) :
+• Primary Computer : PowerPC755 (66MHz)
+• Secondary Computer : DSP Sharc (40MHz)
+• Comparaison LDLC :
+• AMD Sempron 2650 Dual Core (1.45 GHz) ≈ 25€
+• AMD EPYC 7702 (2.0GHz) 64-Core ≈ 8700€
+
+29
+
+

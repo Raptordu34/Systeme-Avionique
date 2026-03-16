@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Disponibilité et intégrité d'un système — Modes de pannes, redondance</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Deux propriétés duales</strong> — La <em>disponibilité</em> $P_D = 1 - P_F$ mesure la probabilité qu'un système fonctionne ; l'<em>intégrité</em> $P_I = 1 - P_{OOC}$ mesure sa probabilité de ne pas dériver en mode incontrôlé (F/OOC). Un système peut avoir une excellente disponibilité mais une intégrité médiocre — les deux exigences se traitent séparément.</li>
+            <li><strong>Redondance : fiabilité vs intégrité</strong> — Multiplier les voies (duplex, triplex, quadruplex) améliore la fiabilité en termes de $(\lambda t)^n$ mais n'améliore l'intégrité que si chaque voie détecte ses propres pannes. La capacité de détection $c$ est le paramètre central : $P_4 = 2(1-c)\lambda t$ est indépendante du niveau de redondance.</li>
+            <li><strong>Architectures de vote</strong> — Trois familles : COM/MON (deux voies dissimilaires, détection totale obligatoire), vote centralisé (résultat médian, mais point unique de défaillance), et vote byzantin (échange des valeurs entre nœuds, résistance à $n$ erreurs avec $3n+1$ voies). Airbus (duplex actif/passif) et Boeing 777 (multiplex actif/actif) illustrent deux philosophies opposées.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ── EXEMPLE INTRODUCTIF : MESURE DE VITESSE ── -->
+        <hr class="section-divider">
+        <h3>Exemple introductif : la mesure de vitesse air</h3>
+
+        <p>
+            Avant d'entrer dans le formalisme mathématique, partons d'un cas concret qui motive toute cette section. La vitesse air est l'une des informations les plus critiques du pilotage : trop lente, l'avion décroche ; trop rapide, il risque la destruction structurelle. Comment garantir que le pilote dispose <em>toujours</em> d'une mesure correcte, même en cas de panne d'un capteur ?
+        </p>
+
+        <h4>Le système ADIRS</h4>
+
+        <p>
+            L'<strong>Air Data Inertial Reference System</strong> (ADIRS) est le cerveau de la mesure de vitesse et d'altitude sur les Airbus modernes. Il fournit simultanément les informations aérologiques (vitesse, altitude, angle d'incidence) et les références inertielles (cap, assiette, accélérations). Son architecture reflète directement les principes de redondance étudiés dans ce chapitre.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Architecture de l'ADIRS :</strong> Le système est constitué de <strong>trois unités indépendantes</strong> (ADIRU 1, 2, 3), chacune alimentée par ses propres capteurs physiques. ADIRU 1 est normalement dédié au capitaine (CAPT), ADIRU 2 au copilote (F/O), et ADIRU 3 joue le rôle de secours (STBY). En cas de défaillance d'une unité, le pilote peut sélectionner manuellement une autre source via le panneau de commutation (SWITCHING panel).
+        </div>
+
+        <p>
+            Chaque ADIRU calcule la vitesse air et le nombre de Mach à partir de deux grandeurs physiques mesurées par les sondes extérieures :
+        </p>
+
+        <ul>
+            <li><strong>La pression statique</strong> — mesurée par des prises affleurantes au fuselage, elle correspond à la pression atmosphérique locale et permet de calculer l'altitude.</li>
+            <li><strong>La pression dynamique</strong> (ou pression totale) — mesurée par le tube de Pitot orienté dans le flux d'air. La différence $p_{totale} - p_{statique} = \frac{1}{2}\rho v^2$ donne la vitesse air selon le théorème de Bernoulli.</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Pourquoi utiliser le nombre de Mach en haute altitude ?</strong> En basse altitude (inférieure à FL280 environ), la vitesse indiquée en nœuds (IAS) est le paramètre de pilotage naturel. En haute altitude, l'air est si raréfié que les effets de compressibilité dominent — c'est le nombre de Mach $M = v/a$ (rapport vitesse/vitesse du son locale) qui devient le paramètre physiquement pertinent pour éviter le décrochage et les limitations structurelles.
+        </div>
+
+        <h4>Anatomie d'un tube de Pitot</h4>
+
+        <p>
+            Le tube de Pitot est bien plus qu'un simple orifice ouvert. Sa conception répond à plusieurs contraintes sévères du milieu aéronautique :
+        </p>
+
+        <ul class="steps">
+            <li><strong>Orifice de purge</strong> — évacue les éventuelles accumulations d'eau par gravité, évitant qu'un bouchon liquide ne fausse la mesure de pression.</li>
+            <li><strong>Séparateur air/eau</strong> — centrifuge l'air entrant pour séparer mécaniquement les gouttelettes en suspension, protection essentielle en vol dans les nuages.</li>
+            <li><strong>Spirale de cuivre chauffante</strong> — résistance électrique intégrée qui maintient la sonde à une température positive pour prévenir le givrage. Un tube de Pitot givré est une cause connue d'accidents graves.</li>
+            <li><strong>Ligne de pression totale</strong> — canal pneumatique acheminant la mesure de pression vers l'ADIRU.</li>
+        </ul>
+
+        <h4>Indépendance des sources : le principe de ségrégation physique</h4>
+
+        <p>
+            La redondance ne sert à rien si les capteurs redondants partagent une même cause de défaillance. C'est le principe de la <strong>cause commune</strong> (<em>Common Cause Failure</em>). Sur un Airbus, les trois sondes Pitot sont donc physiquement séparées :
+        </p>
+
+        <ul>
+            <li>La sonde <strong>CAPT PITOT</strong> est positionnée côté gauche du fuselage avant.</li>
+            <li>La sonde <strong>F/O PITOT</strong> est positionnée côté droit.</li>
+            <li>La sonde <strong>STBY PITOT</strong> est placée en position basse à gauche.</li>
+            <li>Les prises statiques sont réparties des deux côtés du fuselage, encore plus en retrait.</li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>Les risques de défaillance par cause commune :</strong> Malgré la ségrégation, certains agents peuvent toucher simultanément plusieurs sondes si elles ne sont pas suffisamment éloignées. Les risques documentés incluent : poussière volcanique (cendres abrasives), givre intense en vol, eau de pluie en stationnement, et — cas célèbre — <strong>nids de guêpes maçonnes</strong>. Ces insectes construisent leurs nids en quelques heures dans des espaces confinés, bouchant les orifices de mesure.
+        </div>
+
+        <h4>L'incident des guêpes maçonnes à Brisbane</h4>
+
+        <p>
+            En 2009, l'aéroport de Brisbane (BNE) a connu un incident illustrant parfaitement les limites d'une redondance mal protégée. Pendant une rotation de durée standard au sol, des guêpes maçonnes (<em>mud wasps</em>) ont réussi à construire un nid obstruant la sonde Pitot d'un Airbus, entraînant des indications de vitesse aberrantes au décollage. L'avion a dû retourner à Brisbane ; il s'en est tiré sans accident.
+        </p>
+
+        <p>
+            Suite à cet incident, l'aéroport a mis en place une <strong>housse de protection</strong> obligatoire (rouge vif, bien visible) sur toutes les sondes Pitot lors de tout stationnement — avec procédure de retrait formalisée dans la liste de vérification avant départ. C'est un exemple typique de mesure de <em>prévention</em> ajoutée après qu'un scénario de défaillance inattendu s'est matérialisé dans la réalité opérationnelle.
+        </p>
+
+        <div class="tip-box">
+            <strong>Leçon architecturale :</strong> La redondance protège contre les défaillances <em>indépendantes</em> des voies. Elle ne protège pas contre les <em>modes de défaillance communs</em>. La conception de la redondance doit donc toujours s'accompagner d'une analyse FMEA/FMECA pour identifier et éliminer les causes communes — qu'elles soient physiques, environnementales ou liées à la maintenance.
+        </div>
+
+        <!-- ── ABRÉVIATIONS ET MODES DE PANNE ── -->
+        <hr class="section-divider">
+        <h3>Modes de panne et abréviations</h3>
+
+        <p>
+            Lorsqu'un composant tombe en panne, la <em>nature</em> de cette panne est aussi importante que le fait qu'elle se soit produite. Un composant peut tomber en panne de deux façons fondamentalement différentes, avec des conséquences très différentes sur la sécurité du système global.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Analogie :</strong> Considérons un thermostat de chauffage. S'il tombe en panne <em>à l'arrêt</em> (mode passif), le chauffage s'éteint — c'est gênant mais pas dangereux. S'il tombe en panne <em>bloqué en marche</em> (mode incontrôlé), le chauffage reste allumé en permanence — c'est potentiellement dangereux (surchauffe, incendie). La distinction entre ces deux modes de panne est le cœur du concept de disponibilité vs intégrité.
+        </div>
+
+        <h4>Fail/Passive — F/P (ou <em>Silent</em>)</h4>
+
+        <p>
+            Un composant <strong>Fail/Passive</strong> est conçu pour détecter sa propre défaillance et se mettre automatiquement dans un <em>état sûr et déterminé</em> — typiquement en se coupant et en laissant la redondance prendre le relais. On parle aussi de mode <em>silent</em> car le composant défaillant « se tait » au lieu d'émettre des commandes erronnées.
+        </p>
+        <p>
+            Ce mode est caractéristique des <strong>systèmes dual-lanes</strong> (à deux voies), où chaque voie surveille l'autre et peut se passiver en cas d'incohérence détectée.
+        </p>
+
+        <h4>Fail/Out Of Control — F/OOC</h4>
+
+        <p>
+            Un composant <strong>Fail/Out Of Control</strong> tombe en panne <em>sans se passiver</em> : il continue à fonctionner mais de manière incontrôlée, émettant des commandes incorrectes. C'est le mode de panne le plus dangereux, car il « pollue » le système avec de fausses informations sans signaler sa défaillance.
+        </p>
+
+        <div class="callout-danger">
+            <strong>Le F/OOC est l'ennemi de l'intégrité :</strong> Un composant en F/OOC ressemble à un membre du jury qui vote de façon corrompue mais en prétendant voter correctement. Les autres voies du système ne peuvent pas distinguer sa sortie d'une sortie valide — sauf si un mécanisme de vote ou de surveillance détecte l'incohérence. C'est exactement le problème des <em>généraux byzantins</em> (voir plus bas).
+        </div>
+
+        <h4>Fail/Operational – Fail/Passive — F/O-F/P</h4>
+
+        <p>
+            Ce mode décrit le comportement d'un <strong>système dual-dual</strong> (deux paires de voies) robuste à une première panne. Après une première défaillance, le premier sous-système se passive (F/P), et le second sous-système prend le relais en mode opérationnel (F/O). Le système reste donc fonctionnel après une première panne, mais une seconde panne entraînerait la défaillance totale.
+        </p>
+
+        <div class="two-col">
+            <div class="compare-item good" data-label="F/P — Fail/Passive">
+                <p>Détecte sa panne, se coupe, cède la place à la redondance. <strong>Préserve l'intégrité.</strong> Réduit la disponibilité d'un cran.</p>
+            </div>
+            <div class="compare-item bad" data-label="F/OOC — Fail/Out Of Control">
+                <p>Ne détecte pas sa panne, continue à émettre des commandes erronées. <strong>Menace l'intégrité.</strong> La disponibilité apparente est maintenue mais trompeuse.</p>
+            </div>
+        </div>
+
+        <p class="inline-note">F/X désigne indistinctement F/P ou F/OOC — c'est la notation générique pour toute défaillance, sans préciser sa nature.</p>
+
+        <!-- ── DÉFINITIONS ET NOTATIONS ── -->
+        <hr class="section-divider">
+        <h3>Définitions formelles : disponibilité et intégrité</h3>
+
+        <p>
+            On formalise maintenant les deux propriétés fondamentales d'un composant ou d'un système avionique. Ces définitions seront utilisées tout au long de l'analyse des architectures redondantes.
+        </p>
+
+        <h4>Disponibilité</h4>
+
+        <p>
+            On note $P_F(t)$ la probabilité de défaillance totale (toute panne confondue, F/X) à l'instant $t$ :
+        </p>
+
+        <div class="formula-box">
+            $$P_F(t) \equiv P\{F/X\}$$
+            <span class="formula-label">Probabilité de défaillance totale (toute nature)</span>
+        </div>
+
+        <p>
+            La <strong>disponibilité</strong> est le complément à 1 de cette probabilité :
+        </p>
+
+        <div class="formula-box">
+            $$P_D(t) \equiv 1 - P_F(t)$$
+            <span class="formula-label">Disponibilité d'un composant ou d'un système</span>
+        </div>
+
+        <p>
+            Intuitivement, $P_D(t)$ est la probabilité que le système soit <em>en état de marche</em> au moment $t$. Un système avec $P_D = 0{,}9999$ tombe en panne en moyenne 1 heure sur 10 000 — soit moins de 53 minutes par an.
+        </p>
+
+        <h4>Intégrité</h4>
+
+        <p>
+            On note $P_{OOC}(t)$ la probabilité de défaillance en mode incontrôlé :
+        </p>
+
+        <div class="formula-box">
+            $$P_{OOC}(t) \equiv P\{F/OOC\}$$
+            <span class="formula-label">Probabilité de défaillance en mode Out Of Control</span>
+        </div>
+
+        <p>
+            L'<strong>intégrité</strong> est le complément à 1 de cette probabilité :
+        </p>
+
+        <div class="formula-box">
+            $$P_I(t) \equiv 1 - P_{OOC}(t)$$
+            <span class="formula-label">Intégrité d'un composant ou d'un système</span>
+        </div>
+
+        <p>
+            L'intégrité mesure donc la probabilité que le système, <em>s'il tombe en panne</em>, le fasse de manière sûre et détectable — et non de manière silencieuse et incontrôlée.
+        </p>
+
+        <div class="callout-info">
+            <strong>Disponibilité ≠ Intégrité :</strong> Ces deux exigences sont <em>indépendantes</em> et peuvent entrer en tension. Un système très redondant peut avoir une excellente disponibilité ($P_D \approx 1$) tout en ayant une intégrité faible si ses composants tendent à tomber en panne en mode F/OOC. À l'inverse, un composant très « honnête » (qui se passive toujours correctement) aura une bonne intégrité mais potentiellement une disponibilité modeste.
+        </div>
+
+        <h4>Exemple concret : les hypersustentateurs de l'A340</h4>
+
+        <p>
+            Le système hypersustentateur (volets et becs) de l'A340 illustre bien la hiérarchie des exigences :
+        </p>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">10<sup>−6</sup></span>
+                <span class="metric-label">$P_F(t)$ max — défaillance totale par heure</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">10<sup>−8</sup></span>
+                <span class="metric-label">$P_{OOC}(t)$ max — mode incontrôlé par heure</span>
+            </div>
+        </div>
+
+        <p>
+            L'exigence sur $P_{OOC}$ est 100 fois plus sévère que l'exigence sur $P_F$. En d'autres termes, on tolère une défaillance totale du système (volets bloqués en position) bien plus facilement qu'une déflexion incontrôlée des volets (qui pourrait rompre l'aile ou provoquer un roulis incontrôlable). Cette hiérarchie est typique des systèmes de commande de vol.
+        </p>
+
+        <!-- ── EXEMPLE SYSTÈME DUPLEX ── -->
+        <hr class="section-divider">
+        <h3>Exemple : système duplex avec actionneur</h3>
+
+        <p>
+            Analysons maintenant un système concret de commande de surface mobile pour quantifier les probabilités de défaillance et d'intégrité. Ce modèle est le <em>motif de base</em> des calculateurs de commande de vol (comme les PRIM/SEC de l'A320).
+        </p>
+
+        <h4>Description du système</h4>
+
+        <p>
+            Le système est composé de deux voies de calcul (<strong>Voie 1</strong> et <strong>Voie 2</strong>) commandant un même actionneur hydraulique ou électrohydraulique. Hypothèses :
+        </p>
+
+        <ul>
+            <li>La <strong>Voie 1</strong> est active et commande la surface via l'actionneur ; la <strong>Voie 2</strong> est en <em>stand-by</em>, prête à prendre le relais.</li>
+            <li>En cas de panne de la Voie 1, la Voie 2 prend le relais automatiquement.</li>
+            <li>Le taux de défaillance de chaque calculateur est $\lambda$ (supposé constant, loi exponentielle).</li>
+            <li>Un calculateur est capable de <strong>détecter $c$%</strong> de ses propres erreurs de manière sûre et de se passiver (mode F/P). Les $(1-c)$% restants sont des défaillances F/OOC non détectées.</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Le paramètre $c$ est la clé :</strong> $c = 1$ signifie une détection parfaite — le calculateur détecte 100% de ses pannes et se passive toujours correctement. $c = 0$ signifie qu'aucune panne n'est détectée — toutes les défaillances sont en mode F/OOC. En pratique, $c \approx 0.95$ à $0.99$ pour un calculateur avionique bien conçu.
+        </div>
+
+        <h4>Graphe de Markov du système</h4>
+
+        <p>
+            On modélise l'évolution du système par un graphe de Markov. Chaque état est noté par le couple (état Voie 1 | état Voie 2), avec O = Opérationnel, F = Failed, P = Passivé, OOC = Out Of Control.
+        </p>
+
+        <div class="figure-box">
+            <span class="figure-placeholder">
+                [ Graphe de Markov — Système duplex ]<br><br>
+                <strong>$P_0$ : O | O</strong> (état initial, les deux voies opérationnelles)<br>
+                ↓ taux $2\lambda$ (l'une ou l'autre tombe en panne)<br>
+                <strong>$P_1$ : F | O</strong> (une voie a subi une défaillance)<br>
+                ↙ avec prob. $c$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↘ avec prob. $(1-c)$<br>
+                <strong>$P_2$ : P | O</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>$P_4$ : OOC | O</strong><br>
+                ↓ taux $\lambda$<br>
+                <strong>$P_3$ : P | F</strong> (défaillance du système : Voie 2 aussi en panne)
+            </span>
+            <figcaption>Fig. 1 — Graphe d'états du système duplex. $P_3$ et $P_4$ sont les états de défaillance système.</figcaption>
+        </div>
+
+        <ul>
+            <li>$P_3$ : défaillance système après la <em>seconde</em> panne — la Voie 1 s'est passivée, puis la Voie 2 a subi une panne à son tour.</li>
+            <li>$P_4$ : défaillance système après la <em>première</em> panne — la Voie 1 est tombée en F/OOC (non détecté), compromettant immédiatement le système sans que la Voie 2 puisse intervenir proprement.</li>
+        </ul>
+
+        <h4>Résolution des équations différentielles</h4>
+
+        <p>
+            En linéarisant pour les petits $\lambda t$ (ce qui est toujours le cas en avionique, car $\lambda t \ll 1$), on obtient :
+        </p>
+
+        <div class="formula-box">
+            $$\dot{P}_4 = (1-c) \cdot 2\lambda \implies P_4 = 2(1-c)\lambda t$$
+            <span class="formula-label">Probabilité de défaillance par F/OOC — première panne non détectée</span>
+        </div>
+
+        <div class="formula-box">
+            $$\ddot{P}_3 = 2\lambda^2 c \implies P_3 = \lambda^2 c t^2 = c(\lambda t)^2$$
+            <span class="formula-label">Probabilité de défaillance après seconde panne — deux voies successivement en panne</span>
+        </div>
+
+        <p>
+            La probabilité de défaillance totale du système est donc :
+        </p>
+
+        <div class="formula-box">
+            $$P_F = P_3 + P_4 = c(\lambda t)^2 + 2(1-c)\lambda t$$
+            <span class="formula-label">Probabilité de défaillance système — duplex avec détection $c$</span>
+        </div>
+
+        <h4>Analyse des résultats et enseignements</h4>
+
+        <div class="callout-info">
+            <strong>$P_3$ — l'effet de la redondance :</strong> Ce terme est en $(\lambda t)^2$, soit un <em>ordre deux</em> en probabilité. Avec un système simplex (une seule voie), on aurait $P_F \sim \lambda t$ — un ordre un. La redondance a donc multiplié la fiabilité d'un ordre de grandeur. Un système triplex donnerait $P_3 \sim (\lambda t)^3$, quadruplex $(\lambda t)^4$, etc. La redondance seule suffit à atteindre les exigences de disponibilité les plus sévères.
+        </div>
+
+        <div class="callout-warning">
+            <strong>$P_4$ — la limite fondamentale de l'intégrité :</strong> Ce terme est en $\lambda t$ — un <em>ordre un</em>, identique à un système simplex. Sa valeur ne dépend pas du niveau de redondance (duplex, triplex, quadruplex…) : ajouter des voies ne diminue pas $P_4$. Seule l'amélioration du paramètre de couverture $c \to 1$ permet de réduire ce terme. <strong>Conclusion : la redondance améliore la disponibilité, mais pas l'intégrité. L'intégrité exige une meilleure détection.</strong>
+        </div>
+
+        <p>
+            On peut en déduire les caractéristiques d'une voie individuelle :
+        </p>
+
+        <div class="formula-box">
+            $$P_{OOC}\{\text{une voie}\} = \frac{P_4}{2} = (1-c)\lambda t = 1 - P_I\{\text{une voie}\}$$
+            <span class="formula-label">Intégrité d'une voie — liée au taux de détection $c$</span>
+        </div>
+
+        <div class="formula-box">
+            $$P_F\{\text{une voie}\} = \lambda t = 1 - P_D\{\text{une voie}\}$$
+            <span class="formula-label">Disponibilité d'une voie — liée au taux de défaillance $\lambda$</span>
+        </div>
+
+        <!-- ── GESTION DE LA REDONDANCE ── -->
+        <hr class="section-divider">
+        <h3>Gestion de la redondance</h3>
+
+        <p>
+            La redondance hardware ne suffit pas : il faut un ensemble de mécanismes logiciels et électroniques pour la gérer efficacement. La <strong>gestion de la redondance</strong> englobe toute la chaîne qui va de la détection d'une erreur à la restitution d'un service correct.
+        </p>
+
+        <h4>Les cinq piliers de la gestion de la redondance</h4>
+
+        <ul class="steps">
+            <li><strong>Détection fiable des erreurs</strong> — Identifier qu'une voie a produit un résultat incorrect ou est sortie de ses limites de fonctionnement. C'est la base : sans détection, aucune des étapes suivantes n'est possible. La détection peut être interne (auto-test, watchdog, BIT) ou externe (comparaison entre voies).</li>
+            <li><strong>Confinement des erreurs</strong> — Assurer que les unités valides continuent à fonctionner correctement <em>malgré</em> la présence d'erreurs dans le système. Une voie défaillante ne doit pas corrompre les données ou les bus partagés des voies saines. Analogie : un passager malade dans un avion est isolé pour ne pas contaminer les autres.</li>
+            <li><strong>Localisation des erreurs</strong> — Identifier précisément quel équipement est défectueux (carte, module, voie entière). La localisation est nécessaire pour orienter la maintenance et décider quel composant remplacer. Elle peut être fournie par les tests BITE (<em>Built-In Test Equipment</em>) ou les journaux de bord numériques (CFDS sur Airbus).</li>
+            <li><strong>Passivation des éléments défectueux</strong> — Mettre hors circuit les voies défaillantes pour éviter qu'elles perturbent les voies saines. Cette passivation peut être automatique (logicielle, immédiate) ou manuelle (pilote après alerte).</li>
+            <li><strong>Réactivation</strong> — Remettre en service une voie après sa défaillance, soit automatiquement (ex. : suite à une coupure électrique brève — <em>power glitch</em> — qui a mis un calculateur en sécurité mais ne correspond pas à une vraie panne), soit sur décision du pilote (ex. : calculateur redémarré qui réussit les tests BITE de démarrage).</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Les intervalles de vérification :</strong> La gestion de la redondance suppose implicitement qu'il n'y a jamais plus d'un composant défaillant <em>simultanément</em>. Cette hypothèse est assurée par des intervalles de vérification (<em>check intervals</em>) suffisamment courts. Si l'intervalle est de 500 h de vol et que la probabilité de défaillance d'une voie est $\lambda = 10^{-4}$/h, la probabilité d'avoir deux pannes simultanées est $(\lambda \cdot 500)^2 = 2{,}5 \times 10^{-3}$ — faible mais non négligeable, d'où l'importance de vérifier régulièrement les voies en stand-by.
+        </div>
+
+        <h4>Architectures de redondance</h4>
+
+        <p>
+            Trois grandes architectures sont utilisées en avionique pour réaliser la gestion de la redondance, chacune avec ses compromis entre coût, performance et niveau de sécurité.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Architecture Command/Monitor (COM/MON)</strong> — Système constitué de <em>deux voies dissimilaires</em> (matériel différent, logiciel souvent différent). La voie <em>Command</em> calcule en fonction des entrées et envoie les commandes aux actionneurs. La voie <em>Monitor</em> réalise les mêmes calculs en parallèle et compare ses résultats avec ceux de <em>Command</em>. Toute divergence au-delà d'un seuil entraîne la passivation du système. Le COM/MON est le cœur des calculateurs PRIM/SEC de l'A320 : chaque calculateur contient en réalité deux voies COM/MON internes.
+        </div>
+
+        <div class="tip-box">
+            <strong>Pourquoi la dissimilarité ?</strong> Si les deux voies utilisent le même logiciel, un bug de programmation affectera les deux simultanément — ce qui annule complètement la protection. La dissimilarité (langages différents, équipes différentes, parfois matériel différent) permet de s'assurer que les deux voies n'ont pas les mêmes défauts de conception. Sur les Airbus, les calculateurs PRIM (Sermatech) et SEC (Thales) sont développés indépendamment.
+        </div>
+
+        <div class="highlight-box">
+            <strong>Architecture multiplex avec vote centralisé</strong> — Chaque voie réalise ses calculs indépendamment. Un <em>voteur centralisé</em> collecte les résultats de toutes les voies et sélectionne la valeur retenue, généralement la valeur médiane (ce qui élimine les valeurs aberrantes). C'est l'architecture des systèmes triplex ou quadruplex.
+        </div>
+
+        <div class="callout-warning">
+            <strong>Faiblesse du vote centralisé :</strong> Le voteur lui-même est un <em>point unique de défaillance</em> (SPOF — Single Point Of Failure). Si le voteur tombe en panne ou est compromis, tout le système est affecté, quelle que soit la santé des voies individuelles. Pour les niveaux de criticité les plus élevés (DAL A), cette architecture doit être supplémentée ou remplacée par un vote distribué.
+        </div>
+
+        <div class="highlight-box">
+            <strong>Vote avec échange d'informations — Généraux Byzantins</strong> — Dans cette architecture, chaque voie partage ses valeurs calculées avec <em>toutes les autres voies</em> avant de voter. Chaque voie réalise ainsi son propre vote local et en déduit quelles autres voies sont défaillantes. Le résultat est robuste même si certaines voies transmettent intentionnellement (ou accidentellement) des valeurs différentes à différents interlocuteurs.
+        </div>
+
+        <p>
+            Le problème des généraux byzantins (Lamport, Shostak, Pease, 1982) démontre formellement que pour tolérer $n$ voies défaillantes en mode byzantin (F/OOC), il faut au minimum $3n + 1$ voies au total :
+        </p>
+
+        <div class="formula-box">
+            $$\text{Voies nécessaires pour tolérer } n \text{ défaillances byzantines} = 3n + 1$$
+            <span class="formula-label">Condition nécessaire et suffisante — Vote byzantin distribué</span>
+        </div>
+
+        <ul>
+            <li>Pour tolérer <strong>1</strong> défaillance byzantine → <strong>4 voies</strong> (quadruplex)</li>
+            <li>Pour tolérer <strong>2</strong> défaillances byzantines → <strong>7 voies</strong></li>
+        </ul>
+
+        <p class="inline-note">C'est pourquoi cette architecture est qualifiée de « coûteuse » dans les slides : le quadruplex byzantin est le minimum pratique pour les systèmes critiques, mais les systèmes à 7 voies restent rares en avionique commerciale.</p>
+
+        <!-- ── COMPARAISON A330/A340 vs BOEING 777 ── -->
+        <hr class="section-divider">
+        <h3>Philosophies d'architecture : Airbus A330/A340 vs Boeing 777</h3>
+
+        <p>
+            Les deux grandes familles d'avions long-courriers de leur génération illustrent deux philosophies radicalement différentes dans la gestion de la redondance des commandes de vol numériques (<em>fly-by-wire</em>). Ces choix ne sont pas arbitraires : ils reflètent des cultures d'ingénierie différentes et des compromis distincts entre sécurité, coût de développement et performances opérationnelles.
+        </p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Critère</th>
+                        <th>Airbus A330 / A340</th>
+                        <th>Boeing 777</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Mode actionneurs</strong></td>
+                        <td>Actif / Passif</td>
+                        <td>Actif / Actif</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gestion de la défaillance</strong></td>
+                        <td>Basculement sur la voie passive</td>
+                        <td>Passivation de la voie défaillante</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Force fight</strong></td>
+                        <td>Interdit — pas de compensation nécessaire</td>
+                        <td>Toléré si suffisamment rare, avec compensation active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Détection des erreurs</strong></td>
+                        <td>Toutes les erreurs doivent être détectées de manière sûre</td>
+                        <td>Toutes les erreurs n'ont pas besoin d'être détectées</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prob. défaillance actionneur</strong></td>
+                        <td>$&lt; 10^{-9}$/h — exigence très sévère</td>
+                        <td>$&lt; 10^{-6}$/h — exigence plus souple</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Calculateurs principaux</strong></td>
+                        <td>3 canaux principaux (2 calculateurs PRIM dissimilaires) + 2 canaux SEC fonctionnalités réduites</td>
+                        <td>4 calculateurs ACE « entièrement vérifiables » et identiques, pilotés par 3 canaux triplex</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dissimilarité</strong></td>
+                        <td>Fonctionnelle, logicielle ET matérielle (PRIM vs SEC)</td>
+                        <td>Matérielle uniquement — même code, compilateurs ADA différents</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Commandes de vol numériques</strong></td>
+                        <td>Toujours actives — pas de déconnexion possible</td>
+                        <td>Désactivables par le pilote dans certaines configurations</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backup mécanique</strong></td>
+                        <td>Minimal : gouverne H (tangage) et THS uniquement</td>
+                        <td>Minimal : THS et spoilers uniquement</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="two-col">
+            <div class="compare-item good" data-label="Philosophie Airbus">
+                <p><strong>Sécurité par détection totale.</strong> Chaque calculateur doit détecter 100% de ses erreurs (COM/MON interne). Le mode F/OOC est théoriquement éliminé. Exigences d'intégrité très sévères sur les actionneurs ($10^{-9}$/h). Pas de « force fight » possible.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Philosophie Boeing">
+                <p><strong>Sécurité par redondance et vote.</strong> Plusieurs calculateurs actifs en parallèle se surveillent mutuellement par vote. Le F/OOC est toléré s'il est suffisamment rare et compensé. Exigences d'intégrité moins sévères ($10^{-6}$/h) mais redondance plus élevée (triplex de quadruplex).</p>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>Le « force fight » :</strong> En mode actif/actif, deux actionneurs commandant la même surface peuvent recevoir des ordres légèrement différents et s'opposer mécaniquement. Cette lutte mécanique — appelée <em>force fight</em> — génère de la chaleur, accélère l'usure et peut, dans les cas extrêmes, endommager la surface de vol. Airbus l'interdit complètement ; Boeing le tolère sous condition de rareté statistique et le compense par un équilibrage hydraulique actif.
+        </div>
+
+        <!-- ── MÉCANISMES DE VOTE ET MONITORING ── -->
+        <hr class="section-divider">
+        <h3>Mécanismes de vote et de <em>monitoring</em></h3>
+
+        <p>
+            Le vote est le mécanisme central par lequel un système redondant prend une décision collective à partir des sorties de ses différentes voies. Il doit satisfaire deux propriétés fondamentales :
+        </p>
+
+        <ul>
+            <li>Chaque nœud (voie) doit arriver au <em>même résultat</em> à chaque cycle de calcul — ce qui suppose une synchronisation temporelle précise.</li>
+            <li>Une seule commande de sortie cohérente doit être générée — même si les nœuds individuels produisent des résultats légèrement différents.</li>
+        </ul>
+
+        <h4>Règles de vote</h4>
+
+        <p>
+            Le résultat du vote $X_{vot}$ est déterminé par les règles suivantes, appliquées dans l'ordre :
+        </p>
+
+        <ol>
+            <li>Si une <strong>majorité</strong> des voies $X_i$ obtient la même valeur $X_0$, alors $X_{vot} \equiv X_0$ — la majorité l'emporte.</li>
+            <li>S'il n'y a pas de majorité claire (cas d'égalité), trois stratégies de repli sont possibles :
+                <ul>
+                    <li><strong>Default TRUE</strong> : $X_{vot} \equiv \text{TRUE}$ — on choisit le côté activé par défaut (ex. : déployer un système de sécurité)</li>
+                    <li><strong>Default FALSE</strong> : $X_{vot} \equiv \text{FALSE}$ — on choisit le côté inhibé par défaut (ex. : ne pas déclencher une action irréversible)</li>
+                    <li><strong>Default OLD</strong> : $X_{vot} \equiv X_{vot\_old}$ — on maintient la dernière valeur valide connue (ex. : garder la commande de gouverne précédente)</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="tip-box">
+            <strong>Quel default choisir ?</strong> Le choix dépend du mode de défaillance sûr du système commandé. Pour une vanne anti-incendie, Default FALSE (ne pas déclencher l'extinction en cas de doute) est peut-être préférable si les faux positifs sont dangereux. Pour un déclenchement d'alerte crew, Default TRUE (mieux vaut alerter à tort que ne pas alerter) peut être préférable.
+        </div>
+
+        <h4>Règles de monitoring</h4>
+
+        <p>
+            Le <em>monitoring</em> est le mécanisme complémentaire au vote : après avoir calculé $X_{vot}$, chaque voie compare sa propre valeur à ce vote pour détecter si elle est défaillante.
+        </p>
+
+        <p>
+            Pour les <strong>données booléennes ou numériques discrètes</strong>, la règle est simple : une voie $X_i$ est déclarée défaillante si sa valeur diffère du vote.
+        </p>
+
+        <ul>
+            <li><strong>Système N &gt; Duplex :</strong> $\text{Fail}(X_i) \equiv \text{TRUE}$ pour $X_i - X_{vot} \neq 0$</li>
+            <li><strong>Système Duplex :</strong> On ne peut pas identifier laquelle des deux voies est fautive quand elles divergent — les deux sont alors déclarées en échec simultanément.</li>
+        </ul>
+
+        <p>
+            Pour les <strong>données analogiques</strong> (valeurs continues), on utilise une fenêtre de tolérance :
+        </p>
+
+        <div class="formula-box">
+            $$\text{Fail}(X_i) \equiv \text{TRUE} \iff |X_i - X_{vot}| > \text{Limite}$$
+            <span class="formula-label">Détection de défaillance analogique — seuil de tolérance</span>
+        </div>
+
+        <p>
+            Pour un système <strong>quadruplex</strong> (4 voies), le vote analogique se fait par une procédure en deux étapes : on trie les quatre valeurs, on exclut les extrêmes hors de la fenêtre de tolérance, et le vote est la moyenne des deux valeurs médianes $X_{vot} = (X_{mid1} + X_{mid2})/2$.
+        </p>
+
+        <h4>Tables de vérité : système quadruplex (données booléennes)</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Voie</th>
+                        <th>Cas 1</th>
+                        <th>Cas 2</th>
+                        <th>Cas 3</th>
+                        <th>Cas 4</th>
+                        <th>Cas 5</th>
+                        <th>Cas 6</th>
+                        <th>Cas 7</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Voie 1</td><td>$X_1$</td><td>T</td><td>F</td><td>F</td><td>F</td><td>F</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 2</td><td>$X_2$</td><td>T</td><td>T</td><td>F</td><td>F</td><td>F</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 3</td><td>$X_3$</td><td>T</td><td>T</td><td>T</td><td>T</td><td>T</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 4</td><td>$X_4$</td><td>T</td><td>T</td><td>T</td><td>T</td><td>T</td><td>T</td><td>F</td></tr>
+                    <tr><td colspan="2">$X_{vot\_old}$</td><td>—</td><td>—</td><td>—</td><td>—</td><td>$X_{vot\_old}$</td><td>—</td><td>—</td></tr>
+                    <tr><td colspan="2"><strong>$X_{vot}$</strong></td><td>T</td><td>T</td><td>T <em>default</em></td><td>F <em>default</em></td><td>$X_{vot\_old}$</td><td>F</td><td>F</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_1)$</td><td>FALSE</td><td>TRUE</td><td>TRUE</td><td>FALSE</td><td>X</td><td>FALSE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_2)$</td><td>FALSE</td><td>FALSE</td><td>TRUE</td><td>FALSE</td><td>X</td><td>FALSE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_3)$</td><td>FALSE</td><td>FALSE</td><td>FALSE</td><td>TRUE</td><td>Y</td><td>FALSE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_4)$</td><td>FALSE</td><td>FALSE</td><td>FALSE</td><td>TRUE</td><td>Y</td><td>TRUE</td><td>FALSE</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="inline-note">X et Y dans le cas 5 indiquent une ambiguïté : sans valeur historique $X_{vot\_old}$, le monitoring ne peut pas statuer. Le cas 5 est le seul cas d'indétermination dans un quadruplex — preuve que la configuration 2T/2F est le seul point aveugle.</p>
+
+        <h4>Tables de vérité : système triplex</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Voie</th>
+                        <th>Cas 1</th>
+                        <th>Cas 2</th>
+                        <th>Cas 3</th>
+                        <th>Cas 4</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Voie 1</td><td>$X_1$</td><td>T</td><td>F</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 2</td><td>$X_2$</td><td>T</td><td>T</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 3</td><td>$X_3$</td><td>T</td><td>T</td><td>T</td><td>F</td></tr>
+                    <tr><td colspan="2"><strong>$X_{vot}$</strong></td><td>T</td><td>T</td><td>F</td><td>F</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_1)$</td><td>FALSE</td><td>TRUE</td><td>FALSE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_2)$</td><td>FALSE</td><td>FALSE</td><td>FALSE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_3)$</td><td>FALSE</td><td>FALSE</td><td>TRUE</td><td>FALSE</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-info">
+            <strong>Avantage du triplex sur le duplex :</strong> Dans un système triplex, quand une voie diverge, la majorité (2 voies contre 1) permet d'identifier précisément la voie défaillante. Dans un duplex (2 voies), quand les deux divergent, on ne sait pas laquelle a tort — les deux sont déclarées suspectes. Le triplex permet donc une <em>localisation de la défaillance</em>, contrairement au duplex qui ne peut que détecter une incohérence.
+        </div>
+
+        <h4>Tables de vérité : système duplex</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Voie</th>
+                        <th>Cas 1</th>
+                        <th>Cas 2</th>
+                        <th>Cas 3</th>
+                        <th>Cas 4</th>
+                        <th>Cas 5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Voie 1</td><td>$X_1$</td><td>T</td><td>F</td><td>F</td><td>F</td><td>F</td></tr>
+                    <tr><td>Voie 2</td><td>$X_2$</td><td>T</td><td>T</td><td>T</td><td>T</td><td>F</td></tr>
+                    <tr><td colspan="2">$X_{vot\_old}$</td><td>—</td><td>—</td><td>—</td><td>$X_{vot\_old}$</td><td>—</td></tr>
+                    <tr><td colspan="2"><strong>$X_{vot}$</strong></td><td>T</td><td>T <em>default</em></td><td>F <em>default</em></td><td>$X_{vot\_old}$</td><td>F</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_1)$</td><td>FALSE</td><td>TRUE</td><td>TRUE</td><td>TRUE</td><td>FALSE</td></tr>
+                    <tr><td colspan="2">$\text{Fail}(X_2)$</td><td>FALSE</td><td>TRUE</td><td>TRUE</td><td>TRUE</td><td>FALSE</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Limite du duplex :</strong> Dès que les deux voies divergent (cas 2, 3, 4), les deux sont déclarées défaillantes simultanément — même si une seule est réellement en panne. Le système ne peut pas distinguer « Voie 1 fausse, Voie 2 correcte » de « Voie 1 correcte, Voie 2 fausse ». C'est pourquoi le duplex seul ne peut pas assurer l'intégrité sans mécanismes supplémentaires (COM/MON interne, tests BITE, comparaison croisée). Le passage au triplex est souvent obligatoire pour les systèmes de niveau DAL A.
+        </div>
+
+        <p class="source">Cours Systèmes Avioniques — ISAE ENSMA, 2025/2026. Slides 142–161.</p>
+
+    </div>
+
+</body>
+</html>

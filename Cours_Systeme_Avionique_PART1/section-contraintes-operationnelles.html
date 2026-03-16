@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Contraintes opérationnelles — Coûts, fiabilité, disponibilité</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Dispatchabilité &amp; NFF</strong> — Les deux KPIs opérationnels clés qui pilotent le Coût Opérationnel Direct (COD) : dispatchabilité cible &gt; 99,X % par système, taux de NFF cible &lt; 10 % (contre ~50 % aujourd'hui). Un NFF survient quand un équipement est retiré pour panne, mais les tests en atelier ne trouvent aucun défaut.</li>
+            <li><strong>Disponibilité = Fiabilité + Maintenabilité + Logistique</strong> — La disponibilité d'un avion à un instant donné résulte de trois piliers : fiabilité intrinsèque (responsabilité constructeur, mesurée par le MTTF), maintenabilité (responsabilité opérateur, mesurée par le MTTR), et logistique de maintenance. MTBF = MTTF + MDT.</li>
+            <li><strong>Coût de possession optimal</strong> — Compromis en U entre coût d'acquisition (croissant avec la fiabilité) et coût d'exploitation (décroissant avec la fiabilité). L'optimum est atteint par analyse LCC sur la durée de vie de l'appareil (~25–30 ans).</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ── DISPATCH ── -->
+        <h3>Dispatch et Dispatchabilité</h3>
+
+        <div class="highlight-box">
+            <strong>Dispatch</strong> — Mise en œuvre de l'ensemble des mesures opérationnelles et techniques nécessaires pour rendre un avion prêt à décoller.
+            <p class="inline-note">À ne pas confondre avec l'autorisation de décollage délivrée par la tour de contrôle : le dispatch est une opération <em>technique</em> côté compagnie et maintenance, indépendante du contrôle aérien.</p>
+        </div>
+
+        <dl class="key-value">
+            <dt>Dispatch correct</dt>
+            <dd>Dispatch dont la durée n'excède pas 15 minutes entre deux vols successifs</dd>
+            <dt>Dispatchabilité</dt>
+            <dd>(nombre de dispatch corrects) / (nombre total de dispatch) sur une période donnée</dd>
+        </dl>
+
+        <div class="tip-box">
+            <strong>Analogie — le pit-stop F1 :</strong> le dispatch est l'ensemble des opérations au stand avant un départ. Un "dispatch correct" correspond à un arrêt réalisé sous le seuil de temps imparti (15 min en aviation ≈ 3 s en F1). La dispatchabilité est le pourcentage d'arrêts réussis dans les temps sur une saison.
+        </div>
+
+        <div class="callout-info">
+            <strong>Exemple concret :</strong> sur 1 000 rotations en un mois, si 987 sont préparées en moins de 15 min, la dispatchabilité vaut 98,7 %. L'objectif industrie pour les prochaines années est &gt; 99,X % par système avionique.
+        </div>
+
+        <!-- ── NFF ── -->
+        <hr class="section-divider">
+        <h3>No Fault Found (NFF)</h3>
+
+        <p>Le NFF est l'un des problèmes les plus coûteux de la maintenance avionique moderne. Il survient lorsqu'un équipement signale une erreur en vol, mais que les tests réalisés en atelier ne révèlent aucune défaillance.</p>
+
+        <h4>Déroulement typique d'un NFF</h4>
+
+        <ul class="steps">
+            <li>Une erreur est signalée sur un équipement pendant le vol — le système de surveillance avionique génère une alarme.</li>
+            <li>Le module est identifié comme défectueux, retiré de l'avion et expédié en atelier (ou retourné à l'usine).</li>
+            <li>Les tests en atelier ne trouvent aucune anomalie : <strong>No Fault Found</strong>. Coût important pour rien.</li>
+            <li>Cas alternatif : le même problème se reproduit avec la pièce de rechange — l'origine était ailleurs.</li>
+        </ul>
+
+        <h4>Trois causes possibles d'un NFF</h4>
+
+        <div class="compare-grid">
+            <div class="compare-item neutral" data-label="Cause A — Faux positif">
+                Le système de détection d'erreurs en vol a déclenché une alarme sans qu'il y ait de défaillance réelle. Le capteur ou le logiciel de surveillance est en cause.
+            </div>
+            <div class="compare-item neutral" data-label="Cause B — Condition de vol">
+                La défaillance n'existe qu'en conditions de vol (ex : température &lt; −40 °C en croisière). Les tests sol à température ambiante ne reproduisent pas le phénomène.
+            </div>
+            <div class="compare-item neutral" data-label="Cause C — Mauvaise désignation">
+                L'erreur existe bien, mais elle a été attribuée au mauvais LRU (<em>Line Replaceable Unit</em>). Le module retiré n'était pas la source du problème.
+            </div>
+        </div>
+
+        <div class="theorem-box" data-label="Définition">
+            <strong>NFF-rate (taux de NFF)</strong><br>
+            <span style="color: var(--text-secondary);">(nombre de modules changés présentant un NFF) / (nombre total de modules changés) sur une période donnée</span>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Situation actuelle :</strong> le taux de NFF dans l'industrie avionique est aujourd'hui autour de <strong>50 %</strong> — un module retiré sur deux n'avait aucun défaut réel. Chaque NFF génère un double coût : le remplacement inutile du module + les frais de test, transport et logistique du module prélevé.
+        </div>
+
+        <!-- ── ENTRETIEN DIFFÉRÉ, MEL, AOG ── -->
+        <hr class="section-divider">
+        <h3>Entretien différé, MEL et AOG</h3>
+
+        <div class="highlight-box">
+            <strong>Entretien différé</strong> — Propriété d'un système qui, malgré une défaillance détectée, reste <em>dispatchable</em>. Son remplacement peut être reporté jusqu'à la prochaine opération de maintenance planifiée.
+            <p class="inline-note">Exemple : un écran de navigation secondaire en panne n'empêche pas le vol si les systèmes primaires sont opérationnels. L'avion peut continuer à opérer jusqu'au prochain check, sans risque pour la sécurité.</p>
+        </div>
+
+        <div class="two-col">
+            <div class="highlight-box" style="margin-top: 0;">
+                <strong>MEL — Minimum Equipment List</strong>
+                <p>Liste permettant d'autoriser un dispatch en toute sécurité malgré un certain nombre de composants indisponibles ou non fonctionnels. C'est le document de référence pour décider si un avion peut voler avec une panne non résolue.</p>
+                <p class="inline-note">Impacts directs sur le Coût Opérationnel Direct (COD) : une bonne MEL réduit les immobilisations inutiles.</p>
+            </div>
+            <div class="callout-danger" style="margin-top: 0;">
+                <strong>AOG — Aircraft On Ground</strong>
+                <p>Avion immobilisé au sol : une défaillance non réglée malgré les opérations de maintenance empêche l'obtention de l'autorisation technique de vol.</p>
+                <p class="inline-note">Coût extrêmement élevé pour la compagnie : perte de revenus, passagers déroutés, créneaux perdus.</p>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — le contrôle technique automobile :</strong> la MEL est la liste des équipements requis pour circuler légalement. Une option confort défaillante (radio, rétroviseur électrique) n'empêche pas de rouler. Un défaut sur les freins ou les feux, si — le véhicule reste au garage (AOG).
+        </div>
+
+        <!-- ── MEL / MMEL / STATUTS ── -->
+        <hr class="section-divider">
+        <h3>Structure de la MEL : MMEL et statuts de dispatch</h3>
+
+        <p>La MEL d'une compagnie est bâtie sur la <strong>MMEL (Manufacturer Minimum Equipment List)</strong>, document établi par le constructeur en accord avec les autorités de certification (EASA, FAA).</p>
+
+        <dl class="key-value">
+            <dt>MMEL</dt>
+            <dd>Document constructeur (ex : Airbus, Boeing) approuvé par l'autorité de certification — sert de plafond de référence pour toutes les compagnies</dd>
+            <dt>MEL opérateur</dt>
+            <dd>Version propre à la compagnie aérienne — <em>au moins aussi restrictive</em> que la MMEL, approuvée par l'autorité nationale du pays de la compagnie</dd>
+        </dl>
+
+        <p style="margin-top: 1.5rem;">Chaque item de la MMEL reçoit un <strong>statut de dispatch</strong> qui détermine si l'avion peut voler avec ce système défaillant :</p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="GO">
+                <strong>Dispatch autorisé</strong> pour une durée limitée, sans autre condition. L'avion peut décoller normalement.
+                <p class="inline-note">Ex : anémomètre redondant hors service — les canaux primaires couvrent la fonction de mesure de vitesse.</p>
+            </div>
+            <div class="compare-item neutral" data-label="GO IF">
+                <strong>Dispatch conditionnel</strong> — autorisé pour une durée limitée <em>si et seulement si</em> d'autres conditions sont vérifiées (procédures spéciales, restriction d'altitude, système de secours opérationnel…). Certains GO IF ne peuvent pas se cumuler.
+                <p class="inline-note">Ex : autorisé si le vol dure moins de 2 h et qu'un système de secours spécifié est opérationnel.</p>
+            </div>
+            <div class="compare-item bad" data-label="NO GO">
+                <strong>Dispatch interdit.</strong> Une maintenance corrective doit être effectuée avant toute reprise des opérations. L'avion est en situation AOG.
+                <p class="inline-note">Ex : défaillance du système de détection incendie moteur — la sécurité du vol ne peut être garantie.</p>
+            </div>
+        </div>
+
+        <!-- ── COD ── -->
+        <hr class="section-divider">
+        <h3>Maîtriser le Coût Opérationnel Direct (COD)</h3>
+
+        <p>Le COD regroupe tous les coûts directement liés à l'exploitation d'un vol : carburant, maintenance non planifiée, immobilisations au sol, logistique. Pour le maintenir le plus bas possible, deux leviers :</p>
+
+        <div class="two-col">
+            <div class="highlight-box" style="margin-top: 0;">
+                <strong>Durées de rotation courtes</strong>
+                <p>Moins de temps au sol entre deux vols = plus de cycles par avion par jour = meilleure rentabilité de l'appareil.</p>
+                <p class="inline-note">Un dispatch correct est défini par un seuil de 15 min — tout dépassement grève la rotation suivante.</p>
+            </div>
+            <div class="highlight-box" style="margin-top: 0;">
+                <strong>Dispatchabilité maximale</strong>
+                <p>Limiter les maintenances non planifiées et autoriser au maximum l'entretien différé pour éviter les immobilisations imprévues.</p>
+                <p class="inline-note">La possibilité de différer la maintenance reste rare aujourd'hui, mais c'est un objectif industriel majeur.</p>
+            </div>
+        </div>
+
+        <h4>Chaîne de réaction optimale en cas d'erreur en vol</h4>
+
+        <ul class="steps">
+            <li><strong>Identification précise du système fautif</strong> en vol (minimiser le taux de NFF : désigner le bon LRU dès la détection).</li>
+            <li><strong>Transmission anticipée</strong> de la maintenance à prévoir à l'aéroport de destination — via liaison de données ACARS — avant même l'atterrissage.</li>
+            <li><strong>Anticipation au sol :</strong> préparer les opérations de maintenance pour garantir le dispatch dans le délai de 15 min.</li>
+            <li><strong>Remplacement du module défectueux</strong> par un module de rechange issu du stock logistique aéroport.</li>
+            <li><strong>Tests de remplacement automatiques</strong> pour valider le bon fonctionnement et obtenir l'autorisation technique de vol.</li>
+        </ul>
+
+        <h4>Chiffres clés : situation actuelle vs objectifs</h4>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">~50 %</span>
+                <span class="metric-label">Taux NFF actuel</span>
+            </div>
+            <div class="metric-card good">
+                <span class="metric-value">&lt; 10 %</span>
+                <span class="metric-label">Objectif NFF</span>
+            </div>
+            <div class="metric-card good">
+                <span class="metric-value">&gt; 99,X %</span>
+                <span class="metric-label">Objectif dispatchabilité / système</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">&gt; 95 %</span>
+                <span class="metric-label">Maint. différée jusqu'au check 400 h (sans réparation)</span>
+            </div>
+        </div>
+
+        <!-- ── DISPONIBILITÉ ── -->
+        <hr class="section-divider">
+        <h3>Disponibilité : Fiabilité, Maintenabilité, Logistique</h3>
+
+        <p>La <strong>disponibilité</strong> est la probabilité que l'avion ne soit pas défaillant à un instant <em>t</em> donné. Elle résulte de trois piliers complémentaires, portés par des acteurs distincts :</p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fiabilité <em>(Reliability)</em></th>
+                        <th>Maintenabilité <em>(Maintenability)</em></th>
+                        <th>Logistique de maintenance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Aptitude à accomplir une fonction requise dans des conditions données, durant une période donnée</td>
+                        <td>Aptitude à être maintenue ou rétablie dans un état opérationnel, lorsque la maintenance est accomplie dans des conditions et avec des moyens prescrits</td>
+                        <td>Aptitude d'une organisation à fournir un service de maintenance et à faciliter son utilisation</td>
+                    </tr>
+                    <tr>
+                        <td>Responsabilité du <strong>constructeur</strong></td>
+                        <td>Responsabilité de l'<strong>opérateur</strong></td>
+                        <td>Responsabilité de l'<strong>opérateur</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Traduite par le <strong>MTTF</strong><br><em>(Mean Time To Failure)</em></td>
+                        <td>Traduite par le <strong>MTTR</strong><br><em>(Mean Time To Repair)</em></td>
+                        <td>—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-info">
+            <strong>Plan opérationnel — MTBUR :</strong> le <em>Mean Time Between Unscheduled Removal</em> est la métrique opérationnelle réelle utilisée par les compagnies, car il intègre tous les retraits non planifiés — y compris les NFF — et reflète mieux le coût réel que le MTTF théorique garanti par le constructeur.
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — la voiture de location :</strong> le constructeur garantit qu'elle ne tombe pas en panne avant 150 000 km (fiabilité → MTTF). Si elle tombe en panne, le concessionnaire s'engage à la réparer en moins de 48 h (maintenabilité → MTTR). Mais si les pièces de rechange ne sont pas en stock local, peu importe la compétence des techniciens — l'immobilisation sera longue (logistique). La disponibilité résulte des trois piliers ensemble.
+        </div>
+
+        <!-- ── MTTF / MTBF ── -->
+        <hr class="section-divider">
+        <h3>MTTF vs MTBF — Comprendre la différence</h3>
+
+        <div class="two-col">
+            <div class="highlight-box" style="margin-top: 0;">
+                <strong>MTTF — Mean Time To Failure</strong>
+                <p>Temps moyen avant la <em>première</em> défaillance depuis la mise en service. Ne tient pas compte du temps de réparation.</p>
+                <p class="inline-note">Utilisé principalement pour les composants non réparables (fusibles, capteurs jetables, batteries).</p>
+            </div>
+            <div class="highlight-box" style="margin-top: 0;">
+                <strong>MTBF — Mean Time Between Failure</strong>
+                <p>Temps moyen <em>entre</em> deux défaillances successives. Il intègre le MTTF <em>et</em> le temps d'indisponibilité (MDT).</p>
+                <p class="inline-note">Utilisé pour les équipements réparables (calculateurs, actionneurs, capteurs LRU). MTBF = MTTF + MDT.</p>
+            </div>
+        </div>
+
+        <h4>Chronologie d'un équipement réparable</h4>
+
+        <div class="figure-box">
+            <div style="font-family: monospace; font-size: 0.88rem; color: var(--text-secondary); text-align: left; line-height: 2; padding: 0.5rem 1rem;">
+                <div style="color: var(--text-primary); margin-bottom: 0.75rem; font-family: var(--font-family); font-size: 0.9rem;">Axe temporel d'un équipement :</div>
+                <div>0 ────────────────────────── ● ──────── ● ─────────────────── ●</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Première&nbsp;&nbsp;Remise en&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Défaillance</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;défaillance&nbsp;service&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;suivante</div>
+                <div style="margin-top: 0.5rem;">&nbsp;&nbsp;◄───────── MTTF ──────────►◄─ MDT ─►◄──── MUT ────►</div>
+                <div>&nbsp;&nbsp;◄──────────────────── MTBF ─────────────────────────►</div>
+            </div>
+            <figcaption>MDT : Mean Down Time (durée d'indisponibilité pendant réparation) — MUT : Mean Up Time (durée opérationnelle entre deux défaillances)</figcaption>
+        </div>
+
+        <div class="formula-box">
+            Disponibilité = MUT / (MUT + MDT) = MTTF / MTBF
+            <span class="formula-label">formule de disponibilité asymptotique</span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Exemple chiffré :</strong> un calculateur avionique a un MTTF de 10 000 h et un MTTR de 2 h → Disponibilité ≈ 10 000 / 10 002 ≈ <strong>99,98 %</strong>. Si le MTTR passe à 20 h (pièces de rechange manquantes en stock) → Disponibilité ≈ 99,80 %. L'impact de la logistique est direct et mesurable, même à MTTF constant.
+        </div>
+
+        <!-- ── COÛT DE POSSESSION ── -->
+        <hr class="section-divider">
+        <h3>Coût de possession — Le compromis coût/fiabilité</h3>
+
+        <div class="highlight-box">
+            <strong>Coût de possession = Coût d'acquisition + Coût d'exploitation</strong>
+            <p>Le coût d'acquisition <em>augmente</em> avec la fiabilité (composants haute qualité, redondances, validation coûteuse). Le coût d'exploitation <em>diminue</em> avec la fiabilité (moins de pannes, moins de maintenances). La somme des deux forme une courbe en U avec un minimum optimal.</p>
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item bad" data-label="Fiabilité trop faible">
+                <strong>Coût d'exploitation élevé</strong>
+                <ul>
+                    <li>Pannes fréquentes → maintenances non planifiées</li>
+                    <li>Taux de NFF élevé → retraits inutiles coûteux</li>
+                    <li>Risque AOG → perte de revenus directs</li>
+                    <li>Dispatchabilité dégradée → COD en hausse</li>
+                </ul>
+            </div>
+            <div class="compare-item good" data-label="Zone optimale">
+                <strong>Compromis coût/fiabilité</strong>
+                <ul>
+                    <li>Fiabilité suffisante pour minimiser les pannes opérationnelles</li>
+                    <li>Coût d'acquisition raisonnable</li>
+                    <li>Dispatchabilité élevée sans sur-engineering</li>
+                    <li>Identifié par analyse LCC sur toute la durée de vie</li>
+                </ul>
+            </div>
+            <div class="compare-item bad" data-label="Fiabilité trop élevée">
+                <strong>Coût d'acquisition prohibitif</strong>
+                <ul>
+                    <li>Composants très coûteux à produire et certifier</li>
+                    <li>Redondances multiples dont la valeur marginale est faible</li>
+                    <li>Retour sur investissement négatif au-delà de l'optimum</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>Illustration :</strong> choisir entre un pneu d'entrée de gamme (remplacé souvent, peu cher) et un pneu premium (dure longtemps, coûte cher) revient à arbitrer entre coût d'acquisition et coût d'exploitation sur la durée de vie du véhicule — exactement la même logique que pour un LRU avionique sur 25 ans de service.
+        </div>
+
+        <div class="callout-info">
+            <strong>En pratique — analyse LCC :</strong> les constructeurs et compagnies utilisent l'analyse <em>Life Cycle Cost</em> pour localiser le minimum de la courbe en U. Elle intègre le MTTF cible, le MTTR visé, les coûts logistiques, les taux d'AOG estimés et la cadence de maintenance sur la durée de vie de l'avion (typiquement 25–30 ans).
+        </div>
+
+    </div>
+
+</body>
+</html>

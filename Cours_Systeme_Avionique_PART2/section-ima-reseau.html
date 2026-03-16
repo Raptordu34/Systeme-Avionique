@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>IMA — IOM, ADCN &amp; Futur</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>IOM (I/O Module)</strong> — module d'entrées/sorties qui traduit les paquets ARINC 429 externes en trames AFDX internes (et inversement) ; composé d'une UE 429, d'une UR 429, d'une UTC et d'une UER AFDX</li>
+            <li><strong>GWM (Gateway Module)</strong> — passerelle vers le réseau Ethernet externe ; même architecture UTC + UER AFDX que l'IOM, mais avec une UER Ethernet en lieu et place des unités 429</li>
+            <li><strong>ADCN (Aircraft Data Communication Network)</strong> — réseau global de l'avion : AFDX comme colonne vertébrale, entouré de bus hétérogènes (ARINC 429, CAN, signaux analogiques et discrets)</li>
+            <li><strong>SCI (Secure Communication Interface)</strong> — unique point de passage sécurisé entre le monde avionique certifié (AFDX) et le monde ouvert (Ethernet airline/Airbus) ; assure la translation d'adresses IP</li>
+            <li><strong>IMA2G</strong> — seconde génération IMA : matériel distribué (DME), virtualisation PikeOS SSV, allocation dynamique des ressources ; projet européen SCARLETT (40 partenaires)</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <h3>Le module IOM — I/O Module</h3>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> L'<em>IOM (I/O Module)</em> est le module d'entrées/sorties de l'étagère IMA. Son rôle est d'assurer l'interface entre les équipements avioniques legacy connectés via bus <strong>ARINC 429</strong> et le réseau <strong>AFDX</strong> interne à l'étagère. C'est le traducteur universel entre l'ancienne génération de bus et le nouveau réseau commuté.
+        </div>
+
+        <p>
+            <strong>Analogie :</strong> imaginez l'IOM comme un <em>interprète bilingue en temps réel</em>. D'un côté, il parle le « vieux dialecte » ARINC 429 aux équipements extérieurs (capteurs, actionneurs hérités d'anciennes architectures). De l'autre, il communique en AFDX avec les modules cœurs de l'étagère. Il traduit dans les deux sens simultanément, sans jamais introduire d'ambiguïté entre les deux mondes.
+        </p>
+
+        <h4>Architecture interne de l'IOM</h4>
+
+        <p>Le module IOM empile quatre blocs fonctionnels du haut vers le bas :</p>
+
+        <ul class="steps">
+            <li><strong>UR 429 / UE 429</strong> — Unités de Réception et d'Émission ARINC 429 : interfaces physiques vers les bus 429 extérieurs</li>
+            <li><strong>Interface 429</strong> — couche d'adaptation entre les unités 429 et l'UTC ; gère le formatage des paquets 429</li>
+            <li><strong>UTC (Unité de Traitement des Communications)</strong> — cœur logique de l'IOM : orchestre la traduction bidirectionnelle 429 ↔ AFDX</li>
+            <li><strong>UER AFDX (Unité d'Extrémité de Réseau AFDX)</strong> — point de connexion au réseau AFDX de l'étagère, commun à tous les modules IMA</li>
+        </ul>
+
+        <h4>UE 429 — Unité d'Émission ARINC 429</h4>
+
+        <p>
+            Le bus ARINC 429 est un <em>bus mono-émetteur à diffusion</em> : un seul équipement émet sur le bus, tous les récepteurs écoutent. L'<strong>identificateur de ligne</strong> est encapsulé dans chaque message, permettant à chaque récepteur de filtrer les messages qui le concernent.
+        </p>
+
+        <div class="callout-info">
+            <strong>Structure d'un paquet 429 :</strong> Un paquet 429 regroupe <em>plusieurs labels 429</em>. La taille d'un paquet dans la file FIFO est égale au <strong>nombre de labels</strong> qu'il contient. Quand la FIFO arrive à saturation, deux stratégies de gestion sont possibles : <strong>refus du paquet</strong> entrant (le paquet est rejeté en totalité), ou <strong>troncature</strong> (le paquet est retaillé pour tenir dans l'espace restant). L'UE 429 modélise le médium de communication comme une file FIFO dont un serveur consomme les paquets un par un avant de les émettre sur le bus.
+        </div>
+
+        <h4>UR 429 — Unité de Réception ARINC 429</h4>
+
+        <p>
+            La réception repose sur un mécanisme de filtrage appelé <em>PAL (Piège À Label)</em> : chaque UR 429 est configurée pour reconnaître un ensemble précis d'<strong>identificateurs de ligne</strong>. Tout message dont l'identifiant ne figure pas dans la liste de filtrage est silencieusement ignoré.
+        </p>
+
+        <div class="tip-box">
+            <strong>Dimensionnement du délai de reconnaissance :</strong> Le délai de reconnaissance d'un paquet par la UR 429 est soigneusement dimensionné pour <em>éviter les pertes</em>. Concrètement, la fenêtre temporelle d'identification est calculée de façon conservative : on garantit que même le paquet arrivant le plus rapidement sera reconnu avant que la fenêtre ne se ferme. C'est un choix de conception sûr (<em>safe by design</em>) typique de l'avionique.
+        </div>
+
+        <h4>UTC — Unité de Traitement des Communications</h4>
+
+        <p>L'UTC est le bloc central de l'IOM. Il joue <strong>deux rôles complémentaires</strong> selon le sens du flux de données :</p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Sens entrant — externe vers AFDX">
+                <p>Réceptionne les paquets 429 venant de l'extérieur de l'étagère et les <strong>ré-émet vers les modules cœurs</strong> via le réseau AFDX. L'UTC encapsule les labels 429 dans des trames AFDX.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Sens sortant — AFDX vers externe">
+                <p>Récupère les trames AFDX venant des modules cœurs via le réseau AFDX, et <strong>génère les paquets 429</strong> correspondants pour envoi vers les équipements extérieurs de l'étagère.</p>
+            </div>
+        </div>
+
+        <h3>Le module GWM — Gateway Module</h3>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> Le <em>GWM (Gateway Module)</em> est la passerelle entre l'étagère IMA et un réseau <strong>Ethernet standard</strong> non avionique. Il partage la même structure de base que l'IOM (UTC + UER AFDX), mais substitue les unités ARINC 429 par une <strong>UER Ethernet</strong> pour s'interfacer avec le monde extérieur.
+        </div>
+
+        <p>
+            <strong>Analogie :</strong> si l'IOM est le traducteur ARINC 429 ↔ AFDX, le GWM est son équivalent pour le protocole <em>Ethernet standard ↔ AFDX</em>. Il sert notamment à connecter des systèmes de maintenance, des outils de chargement logiciel ou des équipements de cabine qui s'expriment en Ethernet mais doivent communiquer avec le cœur avionique certifié.
+        </p>
+
+        <h4>Architecture interne et comparaison avec l'IOM</h4>
+
+        <div class="two-col">
+            <div class="highlight-box">
+                <strong>UER Ethernet</strong> — spécifique au GWM<br><br>
+                <em>En entrée :</em> filtre les trames Ethernet selon les adresses et récupère uniquement celles à traiter.<br><br>
+                <em>En sortie :</em> émet les données vers le réseau Ethernet après consultation du contenu de la trame.
+                <span class="badge badge-blue" style="margin-top:0.5rem;display:inline-block">Spécifique GWM</span>
+            </div>
+            <div class="highlight-box">
+                <strong>UTC + UER AFDX</strong> — commun à tous les modules<br><br>
+                Fonctionnement identique à celui de l'IOM : l'UTC gère la traduction bidirectionnelle, l'UER AFDX assure la connexion au réseau de l'étagère.
+                <span class="badge badge-orange" style="margin-top:0.5rem;display:inline-block">Idem IOM &amp; CPIOM</span>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Cohérence architecturale :</strong> Le principe de conception est uniforme entre CPIOM, IOM et GWM — tous partagent un bloc UER AFDX identique en bas de leur pile fonctionnelle. Seule la couche d'interface extérieure varie (processeur applicatif pour CPIOM, ARINC 429 pour IOM, Ethernet pour GWM). Cette homogénéité facilite la maintenance, la reconfiguration et la certification en limitant le nombre de composants distincts à qualifier.
+        </div>
+
+        <h3>L'ADCN — Aircraft Data Communication Network</h3>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> L'<em>ADCN (Aircraft Data Communication Network)</em> est le réseau de communication global de l'avion. Il fédère l'ensemble des échanges entre toutes les étagères IMA, les équipements capteurs/actionneurs et les LRU, en s'appuyant sur un réseau cœur AFDX et plusieurs réseaux périphériques de technologies hétérogènes.
+        </div>
+
+        <h4>Structure du réseau — une fédération de bus</h4>
+
+        <p>
+            L'ADCN n'est pas un réseau homogène : c'est une <em>fédération de technologies</em> complémentaires. Chaque type de bus répond à des contraintes spécifiques de débit, de déterminisme, de certification et de compatibilité avec l'existant.
+        </p>
+
+        <div class="metrics-grid">
+            <div class="metric-card accent">
+                <span class="metric-value">AFDX</span>
+                <span class="metric-label">Réseau cœur (backbone)</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">CAN</span>
+                <span class="metric-label">Systèmes mécaniques</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">ARINC 429</span>
+                <span class="metric-label">Avionique legacy</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">Analogique</span>
+                <span class="metric-label">Capteurs directs</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value">Discret</span>
+                <span class="metric-label">Signaux binaires</span>
+            </div>
+        </div>
+
+        <p>
+            L'AFDX joue le rôle de <em>colonne vertébrale</em> : les switches AFDX assurent la connectivité entre toutes les étagères IMA et les modules CPM/CPIOM. Les IOM font le pont vers les bus ARINC 429 périphériques, les GWM vers Ethernet.
+        </p>
+
+        <h4>Tableau récapitulatif des liaisons ADCN</h4>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Bus</th>
+                        <th>Usage typique</th>
+                        <th>Topologie</th>
+                        <th>Module IMA associé</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>AFDX</strong></td>
+                        <td>Réseau cœur inter-étagères</td>
+                        <td>Commuté, full-duplex</td>
+                        <td><span class="badge badge-orange">UER AFDX (tous modules)</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>CAN</strong></td>
+                        <td>Trains d'atterrissage, freins, systèmes mécaniques</td>
+                        <td>Multi-maître</td>
+                        <td><span class="badge badge-blue">IOM / GWM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>ARINC 429</strong></td>
+                        <td>Équipements avioniques legacy (ILS, VOR, ADC…)</td>
+                        <td>Mono-émetteur à diffusion</td>
+                        <td><span class="badge badge-blue">IOM (UR/UE 429)</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Analogique</strong></td>
+                        <td>Capteurs de température, pression, position</td>
+                        <td>Unidirectionnel</td>
+                        <td><span class="badge badge-green">IOM</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Discret</strong></td>
+                        <td>Interrupteurs, signaux tout-ou-rien (position de volet…)</td>
+                        <td>Unidirectionnel</td>
+                        <td><span class="badge badge-green">IOM</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout-info">
+            <strong>Organisation de l'A380 :</strong> Le réseau ADCN de l'A380 est organisé en <em>domaines fonctionnels</em> (Flight Control, Cockpit, Engines, Fuel &amp; Landing Gear, Cabin). Chaque domaine regroupe ses CPM, IOM et LRU autour d'une paire de switches AFDX redondants (S1 à S4). Cette organisation en domaines permet une isolation des pannes et une certification modulaire par domaine plutôt que du système entier.
+        </div>
+
+        <h3>Le monde ouvert et le SCI</h3>
+
+        <p>
+            L'ADCN n'est pas hermétiquement isolé du reste du monde. Airbus et les compagnies aériennes ont besoin d'accéder au réseau avionique depuis des systèmes non certifiés : gestion de maintenance, téléchargement de logiciels via le protocole <strong>A615-A (TFTP)</strong>, gestion centralisée des BITE (<em>Built-In Test Equipment</em>). Ces usages constituent le <strong>monde ouvert</strong>.
+        </p>
+
+        <div class="highlight-box">
+            <strong>SCI — Secure Communication Interface :</strong> Passerelle sécurisée qui constitue l'<em>unique point d'interconnexion autorisé</em> entre le <strong>monde ouvert</strong> (réseau Ethernet airline / Airbus) et le <strong>monde avionique</strong> (réseau AFDX certifié). Toute communication entre les deux mondes transite obligatoirement par le SCI.
+        </div>
+
+        <h4>Fonctionnalités du SCI</h4>
+
+        <ul class="steps">
+            <li><strong>Passerelle AFDX / Ethernet</strong> — traduit les trames entre les deux protocoles réseau sans exposer directement l'un à l'autre</li>
+            <li><strong>Translation d'adresses IP (NAT avionique)</strong> — les adresses IP du monde avionique sont <em>masquées</em> du monde ouvert ; le SCI les remplace par des adresses translatées définies dans une table de configuration statique et certifiée</li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>Séparation impérative — safety et security :</strong> Le monde ouvert et le monde avionique certifié ne doivent <em>jamais</em> être directement interconnectés. La raison est double : d'une part la <strong>safety</strong> (une erreur de configuration dans le réseau de maintenance ne doit pas affecter les systèmes de vol), d'autre part la <strong>security</strong> (une intrusion dans le réseau airline ne doit pas permettre d'accéder aux systèmes critiques). Le SCI est la mise en œuvre matérielle et logicielle de cette frontière.
+        </div>
+
+        <h3>Projets futurs — Réutilisation de l'IMA</h3>
+
+        <p>
+            L'IMA développée pour l'A380 est une architecture <em>mature et maîtrisée</em>. Plutôt que de repartir de zéro à chaque nouveau programme, Airbus a choisi de la réutiliser et de l'adapter — une décision guidée par la réduction des risques et la disponibilité immédiate d'une base certifiée.
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Avantages de la réutilisation">
+                <p>Architecture mature et disponible immédiatement. Maîtrise du système acquise sur A380 ⇒ risques de développement minimaux. Base de certification déjà constituée.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Avions concernés">
+                <p><strong>A400M</strong> (transport militaire), <strong>A350</strong> (long-courrier), <strong>A320 NEO</strong> (New Engine Option — moyen-courrier).
+                </p>
+            </div>
+        </div>
+
+        <h3>IMA2G — Seconde Génération</h3>
+
+        <div class="highlight-box">
+            <strong>IMA2G :</strong> Programme d'évolution vers une architecture de <em>seconde génération</em>, développé dans le cadre du projet européen <strong>SCARLETT</strong> (40 partenaires industriels et académiques, horizon 2015). Objectif principal : gagner en <em>flexibilité</em> et élargir les domaines d'application au monde ouvert, tout en capitalisant sur les acquis de l'IMA première génération.
+        </div>
+
+        <h4>Évolutions matérielles — vers les DME</h4>
+
+        <ul>
+            <li><strong>DME (Distributed Modular Electronics)</strong> — les CPIOM sont remplacés par des modules électroniques distribués physiquement dans l'avion, plus proches des équipements qu'ils pilotent</li>
+            <li><strong>Séparation E/S et calcul</strong> — les entrées/sorties et les composants de calcul sont découplés physiquement, permettant une évolution indépendante des deux</li>
+            <li><strong>Calculateurs multi-cœurs</strong> — introduction de processeurs à plusieurs cœurs pour augmenter la puissance de calcul sans multiplier les boîtiers</li>
+        </ul>
+
+        <h4>Évolutions logicielles — vers la certification incrémentale</h4>
+
+        <ul>
+            <li><strong>Indépendance plateforme / applications</strong> — une application certifiée peut migrer sur un nouveau matériel sans déclencher une re-certification complète du système</li>
+            <li><strong>Certification incrémentale</strong> — on certifie uniquement les modifications, pas la totalité du système à chaque évolution logicielle ou matérielle</li>
+            <li><strong>Chaîne d'outils SCARLETT</strong> — fournit un environnement intégré couvrant le développement, l'intégration, la certification et la maintenance</li>
+            <li><strong>Standardisation communautaire</strong> — maximum de composants et d'outils normalisés pour maximiser la réutilisation entre acteurs industriels</li>
+        </ul>
+
+        <h4>Mécanismes de reconfiguration dynamique</h4>
+
+        <p>
+            L'une des ruptures majeures d'IMA2G : la gestion de la redondance, l'allocation des ressources et leur affectation aux applications sont pilotées <em>dynamiquement par la plateforme</em>, au lieu d'être figées statiquement lors de la conception du système.
+        </p>
+
+        <div class="callout-info">
+            <strong>Analogie statique vs dynamique :</strong> dans l'IMA classique, chaque application se voit attribuer une tranche de CPU et une plage mémoire fixes pour toute la durée de vie du système — comme des postes de travail dédiés et inamovibles. Dans IMA2G, la plateforme peut redistribuer ces ressources à la volée — comme un gestionnaire qui réaffecte les places selon l'occupation réelle et les pannes éventuelles. En cas de défaillance d'un module, la plateforme reconfigure automatiquement l'allocation sur les modules valides restants.
+        </div>
+
+        <h4>PikeOS SSV — Safe and Secure Virtualisation</h4>
+
+        <div class="highlight-box">
+            <strong>PikeOS SSV :</strong> Hyperviseur temps réel certifiable sur lequel s'appuie l'architecture SCARLETT. Basé sur un <em>micro-noyau</em>, il fournit une interface logicielle pour les machines virtuelles tout en garantissant le partitionnement spatial et temporel entre partitions. La <em>para-virtualisation</em> rend les applications indépendantes du matériel physique sous-jacent.
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card good">
+                <span class="metric-value">62</span>
+                <span class="metric-label">Partitions max</span>
+            </div>
+            <div class="metric-card good">
+                <span class="metric-value">&lt; 10 000</span>
+                <span class="metric-label">Lignes de code (noyau)</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">Para-VM</span>
+                <span class="metric-label">Indépendant du matériel</span>
+            </div>
+        </div>
+
+        <ul>
+            <li><strong>Micro-noyau</strong> — base logicielle minimale : surface d'attaque réduite, analyse de code facilitée, certification peu coûteuse</li>
+            <li><strong>Partitions totalement indépendantes</strong> — chaque partition peut démarrer et s'arrêter indépendamment sans affecter les autres</li>
+            <li><strong>Para-virtualisation</strong> — les applications voient une machine virtuelle abstraite, indépendante du matériel physique sous-jacent ; un portage sur nouveau hardware ne nécessite pas de modifier l'application</li>
+            <li><strong>&lt; 10 000 lignes de code</strong> — base de certification très réduite par rapport à un OS complet → coût de certification drastiquement abaissé</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Tendance de fond :</strong> Le graphe d'évolution des avions Airbus (Concorde → A380 → futur) illustre le paradoxe de l'IMA : à mesure que la <em>fonctionnalité avionique</em> progresse exponentiellement (échelle logarithmique), le <em>nombre d'équipements électroniques physiques</em> s'effondre grâce à la consolidation IMA. IMA2G pousse cette logique encore plus loin : toujours plus de puissance logicielle et de flexibilité, toujours moins de boîtiers physiques à câbler, certifier et maintenir.
+        </div>
+
+    </div>
+
+</body>
+</html>

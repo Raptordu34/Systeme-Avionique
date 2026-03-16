@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Lien entre taux de défaillance et MTBF — Durée de vie des composants</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>MTBF = 1/λ</strong> — La durée moyenne avant défaillance est l'inverse du taux de défaillance ; cette relation est valable uniquement lorsque λ est constant (phase de vie utile).</li>
+            <li><strong>Modèles de calcul de λ</strong> — Pour les composants électroniques : modèle factoriel multiplicatif ($\lambda = \lambda_b \cdot \Pi_E \cdot \Pi_Q \cdot \Pi_R$) ; pour les composants mécaniques : recouvrement statistique des distributions de charge et de résistance.</li>
+            <li><strong>Courbe en baignoire</strong> — Tout composant traverse trois phases : défauts de jeunesse (λ décroissant), vie utile (λ ≈ constant), puis usure (λ croissant). Le HASS élimine en usine les composants de la phase I avant leur mise en service.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- 1. DÉFINITION DU TAUX DE DÉFAILLANCE ET DU MTBF           -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Taux de défaillance et MTBF</h3>
+
+        <p>
+            Le <strong>taux de défaillance</strong> $\lambda(t)$ quantifie, à chaque instant $t$,
+            la probabilité qu'un composant <em>encore en service</em> tombe en panne dans l'intervalle
+            de temps infinitésimal suivant. Sa définition formelle fait intervenir une probabilité
+            conditionnelle : défaillance dans $[t,\, t+\Delta t]$ <em>sachant</em> que le composant
+            a survécu jusqu'en $t$.
+        </p>
+
+        <div class="formula-box">
+            $$\lambda(t) = \frac{P\!\left\{F(t+\Delta t)\,/\,C(t)\right\}}{\Delta t}$$
+            <span class="formula-label">
+                $F(t+\Delta t)$ : défaillance entre $t$ et $t+\Delta t$ — $C(t)$ : survie jusqu'en $t$
+            </span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Lecture intuitive.</strong> Imaginons 1 000 composants mis en service simultanément.
+            À $t = 1\,000\,\text{h}$, il en reste 950 opérationnels. Si 5 tombent en panne
+            entre $t = 1\,000\,\text{h}$ et $t = 1\,001\,\text{h}$, le taux de défaillance
+            observé est $\lambda \approx \frac{5}{950 \times 1} \approx 5{,}26 \times 10^{-3}\,\text{h}^{-1}$.
+            Il s'agit bien d'une <em>probabilité par unité de temps</em> : plus λ est grand,
+            plus la panne est probable à chaque heure qui passe.
+        </div>
+
+        <h4>Relation avec le MTBF</h4>
+
+        <p>
+            Lorsque $\lambda$ est <strong>constant</strong> — ce qui est valable pendant la phase
+            de vie utile (voir §&nbsp;4) — la durée de vie du composant suit une loi exponentielle
+            et la durée moyenne avant première défaillance s'écrit simplement :
+        </p>
+
+        <div class="formula-box">
+            $$\boxed{\text{MTBF} = \frac{1}{\lambda}}$$
+            <span class="formula-label">Mean Time Between Failures — valable uniquement si $\lambda$ est constant</span>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Piège fréquent.</strong> Un MTBF de 10 000 h <em>ne signifie pas</em>
+            que le composant fonctionnera sans défaillance pendant 10 000 h puis tombera en panne.
+            Il signifie que, statistiquement sur une grande population, une défaillance survient
+            en moyenne toutes les 10 000 h. Dès la mise en service, la probabilité de survie
+            à $t = \text{MTBF}$ n'est que $e^{-1} \approx 36{,}8\,\%$.
+            La loi exponentielle est sans mémoire : l'âge du composant ne change pas
+            sa probabilité de tomber en panne à l'instant suivant.
+        </div>
+
+        <h4>Unités et ordres de grandeur avioniques</h4>
+
+        <p>
+            En aéronautique, $\lambda$ est exprimé en <strong>h⁻¹</strong> ou en
+            <strong>PPM (Parties Par Million d'heures)</strong>,
+            c'est-à-dire $1\,\text{PPM} = 10^{-6}\,\text{h}^{-1}$.
+            Les normes de certification (CS-25, DO-254) imposent des exigences très sévères
+            pour les fonctions critiques.
+        </p>
+
+        <div class="metrics-grid">
+            <div class="metric-card accent">
+                <span class="metric-value" style="font-size:1.25rem;">20–100</span>
+                <span class="metric-label">PPM — Calculateur avionique</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value" style="font-size:1.25rem;">10–50 k h</span>
+                <span class="metric-label">MTBF correspondant</span>
+            </div>
+            <div class="metric-card bad">
+                <span class="metric-value" style="font-size:1.1rem;">≤ 10⁻⁹/h</span>
+                <span class="metric-label">Objectif catastrophique (CS-25.1309)</span>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <strong>Conversion PPM → MTBF.</strong> Un calculateur avionique à
+            $\lambda = 50\,\text{PPM} = 50 \times 10^{-6}\,\text{h}^{-1}$ a un
+            $\text{MTBF} = \frac{1}{50 \times 10^{-6}} = 20\,000\,\text{h}$.
+            Un A320 effectuant ~4 000 h de vol par an, ce calculateur tombera
+            statistiquement en panne environ tous les 5 ans de service — soit
+            une fiabilité bien supérieure à la plupart des équipements grand public,
+            mais insuffisante à elle seule pour satisfaire les exigences catastrophiques
+            (qui nécessitent plusieurs niveaux de redondance).
+        </div>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- 2. MODÈLE FACTORIEL — RÉSISTANCE ÉLECTRIQUE               -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Modèle factoriel — exemple d'une résistance électrique</h3>
+
+        <p>
+            Pour les composants électroniques, les normes de fiabilité (MIL-HDBK-217F,
+            RDF 2000, IEC 61709) proposent un <strong>modèle factoriel multiplicatif</strong> :
+            le taux de défaillance de référence $\lambda_b$ — mesuré en laboratoire dans
+            des conditions idéales — est corrigé par des facteurs représentant les
+            conditions réelles d'emploi du composant.
+        </p>
+
+        <div class="formula-box">
+            $$\lambda = \lambda_b \cdot \Pi_E \cdot \Pi_Q \cdot \Pi_R$$
+            <span class="formula-label">
+                Modèle de fiabilité pour une résistance — source : MIL-HDBK-217F / RDF 2000
+            </span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Analogie du prix d'un trajet en taxi.</strong>
+            $\lambda_b$ est le tarif de base (caractéristique du composant lui-même).
+            $\Pi_E$ est le coefficient de zone (centre-ville embouteillé vs autoroute dégagée —
+            ici : cockpit vibrant vs serveur de datacenter climatisé).
+            $\Pi_Q$ reflète la qualité du véhicule (taxi certifié vs voiture de fortune).
+            $\Pi_R$ est la pénalité de spécificité (résistance à très haute valeur ohmique,
+            plus capricieuse en environnement hostile).
+            Le coût final est le produit de tous ces facteurs.
+        </div>
+
+        <p>Chaque facteur capture un aspect distinct des conditions d'utilisation :</p>
+
+        <div class="table-glass">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Facteur</th>
+                        <th>Signification physique</th>
+                        <th>Valeurs typiques</th>
+                        <th>Commentaire</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>$\lambda_b$</strong></td>
+                        <td>Taux de défaillance de référence</td>
+                        <td>$10^{-3}$…$10^{-1}$ PPM</td>
+                        <td>Conditions idéales : 25 °C, absence de vibrations, tension nominale</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$\Pi_E$</strong></td>
+                        <td>Facteur environnemental</td>
+                        <td>1 (sol fixe) → 20 (avion militaire)</td>
+                        <td>Intègre vibrations, humidité, altitude, chocs thermiques</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$\Pi_Q$</strong></td>
+                        <td>Facteur de qualité</td>
+                        <td>0,1 (mil. grade) → 10 (commercial bas de gamme)</td>
+                        <td>Traçabilité, processus de fabrication, tests de qualification</td>
+                    </tr>
+                    <tr>
+                        <td><strong>$\Pi_R$</strong></td>
+                        <td>Facteur de résistance</td>
+                        <td>≈ 1 (R &lt; 100 kΩ) → 15 (R ≫ 1 MΩ)</td>
+                        <td>Croît fortement au-delà de 1 MΩ : instabilité électrique accrue</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>Influence de la température — loi d'Arrhenius</h4>
+
+        <p>
+            Le graphe de gauche (cours, diapo 121) montre que $\log(\Pi_E / \Pi_{E_0})$
+            croît <strong>linéairement avec la température</strong>.
+            C'est une manifestation de la <strong>loi d'Arrhenius</strong> :
+            les réactions de dégradation (oxydation, diffusion, électromigration)
+            sont thermiquement activées, et leur vitesse double environ tous les 10 °C.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Loi d'Arrhenius appliquée à la fiabilité :</strong>
+            $$\lambda(T) = A \cdot \exp\!\left(-\frac{E_a}{k_B T}\right)$$
+            où $E_a$ est l'énergie d'activation du mécanisme de défaillance
+            ($\approx 0{,}3$…$1{,}0\,\text{eV}$ selon le matériau),
+            $k_B = 8{,}617 \times 10^{-5}\,\text{eV/K}$ la constante de Boltzmann,
+            et $T$ la température en Kelvin.
+            <br><br>
+            Pour $E_a = 0{,}7\,\text{eV}$, passer de 50 °C à 70 °C
+            multiplie $\lambda$ par un facteur $\approx 4$.
+        </div>
+
+        <div class="tip-box">
+            <strong>Règle pratique des 10 °C.</strong>
+            En première approximation, chaque augmentation de 10 °C double le taux de
+            défaillance d'un composant électronique. En avionique, le refroidissement
+            des racks électroniques (ventilation forcée, conduction par semelle thermique)
+            n'est pas seulement une contrainte mécanique : c'est un levier direct
+            de fiabilité. Un gain de 20 °C sur la température de jonction peut
+            diviser $\lambda$ par 4, soit multiplier le MTBF par 4.
+        </div>
+
+        <h4>Influence de la valeur ohmique — facteur $\Pi_R$</h4>
+
+        <p>
+            Le graphe de droite (diapo 121) montre que $\Pi_R$ reste quasi constant
+            pour $R < R_0 = 1\,\text{M}\Omega$, puis croît rapidement au-delà.
+            Une résistance de très haute valeur est plus sensible aux fuites de surface,
+            à l'humidité et aux effets d'ionisation : son comportement devient moins
+            prévisible, ce qui se traduit par un taux de défaillance plus élevé.
+        </p>
+
+        <div class="callout-info">
+            <strong>Exemple numérique.</strong>
+            Soit une résistance CMS avec $\lambda_b = 0{,}01\,\text{PPM}$, utilisée
+            dans un cockpit d'avion civil ($\Pi_E = 6$), de qualité mil. grade ($\Pi_Q = 0{,}2$),
+            avec $R = 10\,\text{k}\Omega$ ($\Pi_R \approx 1$) :
+            $$\lambda = 0{,}01 \times 6 \times 0{,}2 \times 1 = 0{,}012\,\text{PPM}$$
+            soit un $\text{MTBF} \approx 83\,\text{millions d'heures}$.
+            Si la même résistance était de qualité commerciale ($\Pi_Q = 5$), $\lambda$
+            passerait à $0{,}3\,\text{PPM}$, soit un MTBF 25 fois plus faible.
+        </div>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- 3. APPROCHE PROBABILISTE — SYSTÈME MÉCANIQUE              -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Approche probabiliste — exemple d'un système mécanique</h3>
+
+        <p>
+            Pour les composants mécaniques (axes, attaches, pistons, pièces de structure),
+            il n'existe pas de modèle factoriel standardisé comme MIL-HDBK-217.
+            Le taux de défaillance est calculé à partir de l'<strong>analyse statique
+            et dynamique</strong> du système, en modélisant statistiquement les incertitudes
+            sur les sollicitations et sur la résistance du matériau.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Principe charge–résistance.</strong><br><br>
+            Une défaillance survient si et seulement si la <em>sollicitation appliquée</em>
+            (contrainte mécanique, effort, pression) dépasse la <em>résistance du matériau</em>
+            (limite à la rupture, limite de fatigue).
+            Ni la charge ni la résistance ne sont parfaitement déterministes : elles suivent
+            chacune une distribution de probabilité, supposée <strong>normale</strong>
+            en première approximation (dispersion de fabrication, variabilité des conditions
+            d'exploitation, incertitudes sur les propriétés matériau).
+        </div>
+
+        <div class="callout-info">
+            <strong>Analogie de la porte.</strong>
+            Imaginez une porte fabriquée avec une hauteur de $190 \pm 3\,\text{cm}$ (distribution
+            de la résistance), et des passagers dont la taille varie selon $175 \pm 10\,\text{cm}$
+            (distribution de la charge). La probabilité que quelqu'un se cogne la tête
+            — la "panne" — est donnée par l'<strong>aire de chevauchement</strong> des deux
+            distributions. Pour réduire ce risque, on peut soit augmenter la hauteur moyenne
+            de la porte (surdimensionner), soit réduire la dispersion de fabrication
+            (meilleures tolérances), soit réduire la variabilité des passagers (limitations d'usage).
+            Ces trois leviers correspondent exactement aux marges de sécurité en conception aéro.
+        </div>
+
+        <p>
+            Sur le graphe du cours (diapo 122), la distribution de gauche représente
+            les sollicitations autour de leur valeur nominale, et celle de droite la résistance
+            du matériau autour de sa valeur nominale. L'<strong>aire grisée</strong> — zone de
+            recouvrement des deux courbes — représente directement la probabilité de défaillance,
+            et donc le taux $\lambda$ (sous hypothèse de stationnarité).
+        </p>
+
+        <div class="formula-box">
+            $$\lambda \propto P(\text{Charge} > \text{Résistance})
+            = \int_{-\infty}^{+\infty} f_{\text{charge}}(x)\cdot F_{\text{résistance}}(x)\,dx$$
+            <span class="formula-label">Probabilité de défaillance = recouvrement des distributions charge et résistance</span>
+        </div>
+
+        <h4>Rôle de la marge de sécurité</h4>
+
+        <p>
+            La <strong>marge de sécurité</strong> est l'écart entre la résistance nominale
+            et la charge nominale. Plus cet écart est grand, plus les deux distributions sont
+            éloignées et moins leur recouvrement est important. En ingénierie aéronautique,
+            on définit classiquement un <strong>coefficient de sécurité</strong>
+            $k_s = R_{\text{nom}} / C_{\text{nom}}$, typiquement compris entre 1,5 et 4
+            selon la criticité de la pièce et la qualité des données statistiques disponibles.
+        </p>
+
+        <div class="two-col">
+            <div class="compare-item good" data-label="Leviers pour réduire λ">
+                <ul>
+                    <li>Augmenter la résistance moyenne (matériau plus solide, traitement de surface)</li>
+                    <li>Réduire la dispersion de fabrication (meilleures tolérances dimensionnelles)</li>
+                    <li>Réduire la charge nominale (surdimensionnement structural)</li>
+                    <li>Réduire la variabilité opérationnelle (limites d'enveloppe de vol)</li>
+                </ul>
+            </div>
+            <div class="compare-item bad" data-label="Facteurs augmentant λ">
+                <ul>
+                    <li>Utilisation hors enveloppe de vol (surcharge, facteur de charge excessif)</li>
+                    <li>Fatigue accumulée (déplacement progressif de la distribution de résistance vers les faibles valeurs)</li>
+                    <li>Corrosion et usure (réduction de la section utile)</li>
+                    <li>Incertitudes non maîtrisées sur les charges (rafales, atterrissages sévères)</li>
+                </ul>
+            </div>
+        </div>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- 4. LA COURBE EN BAIGNOIRE                                 -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Défaillances au cours du temps — la courbe en baignoire</h3>
+
+        <p>
+            Pour tout système réel, le taux de défaillance observé évolue selon une courbe
+            caractéristique en forme de baignoire (<em>bathtub curve</em>),
+            superposition de trois contributions distinctes dont les importances
+            relatives varient au cours du temps.
+        </p>
+
+        <div class="theorem-box" data-label="Modèle">
+            La courbe en baignoire est la somme de trois composantes :
+            une contribution décroissante (mortalité infantile), une contribution
+            constante (défaillances aléatoires) et une contribution croissante (usure).
+            C'est le modèle de référence en fiabilité pour dimensionner les intervalles
+            de maintenance préventive et fixer les limites de navigabilité.
+        </div>
+
+        <h4>Phase I — Défauts de jeunesse (mortalité infantile)</h4>
+
+        <p>
+            $\lambda$ est <strong>élevé et décroissant</strong>. Les composants défectueux
+            dès la fabrication (microfissures dans les soudures, paramètres hors tolérance,
+            contamination de la puce) tombent en panne rapidement après la mise en service.
+            Cette phase est dominée par les <em>défauts de fabrication</em>, pas par l'usure.
+        </p>
+
+        <div class="callout-info">
+            <strong>Analogie des ampoules à incandescence.</strong>
+            Si on allume 1 000 ampoules neuves, une dizaine claquent dans les premières heures —
+            celles-là avaient un filament légèrement sous-calibré. Une fois éliminées,
+            les survivantes durent longtemps de façon régulière. La phase I élimine
+            naturellement les « mauvaises » pièces de la population.
+        </div>
+
+        <h4>Phase II — Vie utile (défaillances aléatoires)</h4>
+
+        <p>
+            $\lambda$ est <strong>approximativement constant</strong>. Les défaillances
+            surviennent de façon aléatoire et indépendante, sans corrélation avec l'âge
+            du composant. La durée de vie suit alors une loi exponentielle, et c'est
+            <em>la seule phase</em> où $\text{MTBF} = 1/\lambda$ est directement applicable.
+            En avionique, la conception et les programmes d'entretien visent à maintenir
+            le composant dans cette phase pendant toute la durée de service de l'appareil.
+        </p>
+
+        <div class="tip-box">
+            La loi exponentielle est <strong>sans mémoire</strong> : la probabilité
+            de défaillance à l'instant suivant est indépendante de l'âge du composant.
+            Conséquence pratique : en phase II, il est inutile de remplacer un composant
+            simplement parce qu'il est vieux — il est aussi fiable qu'un composant neuf.
+            Cette propriété justifie les maintenance « on-condition » (remplacement
+            uniquement si dégradation détectée) pour les équipements électroniques.
+        </div>
+
+        <h4>Phase III — Usure et vieillissement</h4>
+
+        <p>
+            $\lambda$ est <strong>croissant</strong>. L'accumulation de fatigue (fissuration),
+            d'oxydation, de corrosion, ou de dégradation électrique (électromigration,
+            déplétion des condensateurs électrolytiques) augmente la probabilité de panne
+            à chaque heure supplémentaire. La maintenance préventive a pour objectif
+            de <em>retirer le composant avant qu'il n'entre dans cette phase</em>.
+        </p>
+
+        <div class="callout-warning">
+            <strong>La courbe en baignoire est une statistique de population,
+            pas un destin individuel.</strong>
+            Elle ne décrit pas le comportement d'un composant particulier,
+            mais la tendance statistique sur une grande population.
+            Un composant individuel ne "sait" pas dans quelle phase il se trouve :
+            il peut tomber en panne à n'importe quel moment.
+            C'est pour cette raison que la redondance reste indispensable
+            même pour des composants en phase de vie utile.
+        </div>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- 5. MÉCA VS ÉLEC — HASS                                    -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Composants mécaniques et électroniques — HASS</h3>
+
+        <p>
+            Bien que les deux types de composants suivent la courbe en baignoire,
+            la <strong>forme et l'amplitude de leurs phases diffèrent sensiblement</strong>,
+            ce qui se reflète dans les stratégies de maintenance associées.
+        </p>
+
+        <div class="two-col">
+            <div class="compare-item neutral" data-label="Composant électronique">
+                <ul>
+                    <li>Phase I marquée (défauts de fabrication fréquents à petite échelle)</li>
+                    <li>Phase II longue avec $\lambda$ quasi constant — pas de fatigue mécanique</li>
+                    <li>Phase III tardive et peu prononcée (dégradation progressive des oxydes, électromigration)</li>
+                    <li>Maintenance <em>on-condition</em> privilégiée : pas de TBO fixe</li>
+                </ul>
+            </div>
+            <div class="compare-item neutral" data-label="Composant mécanique">
+                <ul>
+                    <li>Phase I courte si contrôle qualité rigoureux à la fabrication</li>
+                    <li>Phase II de durée variable selon les marges de conception</li>
+                    <li>Phase III très marquée — fatigue, corrosion, usure se cumulent inexorablement</li>
+                    <li>Maintenance préventive calée sur le nombre de cycles : TBO (<em>Time Between Overhaul</em>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h4>HASS — High Accelerated Stress Screening</h4>
+
+        <p>
+            Pour éliminer les défauts de jeunesse <em>avant</em> la mise en service,
+            les équipementiers avioniques utilisent le <strong>HASS</strong>
+            (<em>High Accelerated Stress Screening</em>).
+            L'objectif est de « consommer » artificiellement la phase I de la courbe
+            en baignoire en usine, de sorte que l'équipement livré soit statistiquement
+            déjà dans sa phase de vie utile dès l'installation à bord.
+        </p>
+
+        <div class="highlight-box">
+            <strong>Principe du HASS.</strong><br><br>
+            Les équipements sont soumis à des sollicitations sévères et répétées :
+            forts gradients de température (cyclage thermique rapide, typiquement
+            $-40\,°\text{C}$ à $+85\,°\text{C}$ en quelques minutes),
+            vibrations à spectre large (profil aléatoire reproduisant les environnements
+            de vol les plus hostiles), et tensions ou courants aux limites
+            de la spécification.
+            Les composants défectueux dès la fabrication tombent en panne
+            durant ce test — en usine, pas chez l'opérateur.
+        </div>
+
+        <div class="tip-box">
+            <strong>HASS ≠ HALT.</strong>
+            Le HALT (<em>Highly Accelerated Life Test</em>) cherche à identifier
+            les marges de robustesse en poussant le composant <em>au-delà</em>
+            de ses limites de spécification jusqu'à la destruction, pour révéler
+            les faiblesses de conception. Le HASS, lui, utilise des niveaux
+            de stress <em>inférieurs aux limites de destruction</em> pour éliminer
+            les pièces déjà défaillantes sans dégrader les pièces saines —
+            c'est un outil de production, pas de conception.
+        </div>
+
+        <div class="callout-info">
+            <strong>Exemple concret — cartes électroniques avioniques.</strong><br>
+            Avant certification, les cartes de gestion de vol (FMC) subissent typiquement
+            10 à 20 cycles thermiques ($-40\,°\text{C} \leftrightarrow +70\,°\text{C}$,
+            gradient $\geq 20\,°\text{C/min}$) couplés à des vibrations aléatoires
+            ($\approx 6\,G_{\text{rms}}$, bande 20–2 000 Hz).
+            Les défauts de microfissures dans les joints de soudure, les composants
+            hors tolérance ou les défauts de routage se manifestent durant ces cycles.
+            Les équipements qui survivent au HASS se trouvent statistiquement
+            en phase de vie utile dès leur entrée en service opérationnel.
+        </div>
+
+    </div>
+
+</body>
+</html>

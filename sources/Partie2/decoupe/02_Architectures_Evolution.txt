@@ -1,0 +1,551 @@
+Architecture centralisée
+• Architecture Centralisée :
+• Calculateur central unique
+Haute vulnérabilité :
+perte du calculateur => chute du système
+
+30
+
+Architecture fédérale
+• Architecture Fédérale :
+• Dispatché dans l’avion (à proximité de capteurs/actionneurs)
+• Découpage et centralisation par domaine
+• Communications : utilisation du bus spécifiques MIL-STD-1553B
+réduction de la vulnérabilité,
+simplicité,
+tolérance aux fautes
+Vulnérabilité (par domaine et pour les communications)
+
+31
+
+Architecture répartie
+• Principe :
+• fonctionnement décentralisé
+• pas de partage de ressource
+• Les calculateurs sont des modules LRU (Line Replaceable Unit)
+• Equipement dédié => 1 LRU = 1 fonction avionique
+• Chaque calculateur (LRU) : un ensemble de bus numériques
+mono-émetteurs (chaque calculateur est propriétaire de ses bus)
+• L’interconnection des équipements : bus mono-émetteur, multirécepteurs.
+
+F2
+
+F1
+
+G1
+
+F3
+
+G2
+
+32
+
+Architecture répartie
+• Systèmes asynchrones
+•
+•
+•
+•
+•
+
+Pas d’horloge commune;
+Pas de mécanisme de synchronisation d’horloges;
+Mémoire par bus diffusant
+Tampon à écrasement
+Pas de synchronisation entre fonctions avioniques
+
+33
+
+Architecture répartie
+• Ses avantages :
+Simplicité d’intégration :
+• Avion = ensemble de fonctions indépendantes dont l’unique
+interaction se résume à des échanges de données;
+• Un système avionique = un ensemble de processus
+asynchrones communicants;
+Simplicité de conception :
+• peu de difficulté pour maîtriser (comprendre, prédire,
+dimensionner) le comportement temps réel du système
+avionique
+
+34
+
+Architecture répartie
+• Ses avantages :
+•
+•
+•
+
+•
+
+Simplicité de développement :
+Développement séparé des fonctions;
+Bien adapté à la logique industrielle fédérale à la Airbus.
+Simplicité de maintenance :
+LRU en panne sont facilement remplaçables;
+Simplicité des communications :
+Déterminisme local sur chaque bus;
+
+35
+
+Architecture répartie
+• Ses inconvénients :
+Besoin de fonctions robustes à l’asynchronisme:
+• Variation des délais induits par l’absence de référence
+temporelle commune;
+• OK pour les avions civils (stables et lents);
+Pas de déterminisme global :
+• Pas de chef d’orchestre;
+Absence de vue globale
+Explosion du nombre de calculateurs et de bus
+• Maillage complexe
+36
+
+Architecture répartie
+• Exemple (extrait de l’A340)
+Flight Management
+Guidance Envelop
+Computer 1/COM
+
+Air Data Inertial
+Reference Unit 1
+Flight Management
+Guidance Envelop
+Computer 1/MON
+
+Air Data Inertial
+Reference Unit 2
+
+Flight Management
+Guidance Envelop
+Computer 2/COM
+
+Air Data Inertial
+Reference Unit 3
+
+3 centrales
+inertielles et
+anémométriques
+
+Bus de terrain transportant
+les paramètres de vitesse,
+position, accélération…
+
+Flight Management
+Guidance Envelop
+Computer 2/MON
+2 pilotes automatique
+doubles
+
+…
+
+37
+
+Architecture répartie
+• Exemple (extrait de l’A340)
+Monde de l'avionique
+classique
+
+Actionneur
+Capteur
+
+LRU
+
+LRU
+
+Actionneur
+LRU
+LRU
+
+LRU
+LRU
+LRU
+LRU
+LRU LRU
+LRU
+LRU
+LRU
+LRU LRULRU
+LRU
+LRU
+LRU
+LRU
+LRU
+LRU
+Capteur
+LRU LRU
+LRU
+LRU
+LRU
+LRU
+
+Monde des
+applications non
+essentielles
+(applications
+compagnies, passagers,
+sortie vers opérateurs
+de maintenance…)
+
+LRU
+
+LRULRU
+
+LRU
+LRU
+
+LRU
+LRU
+
+38
+
+Architecture répartie : ARINC 429
+• Technologie des années 1970 :
+
+• Standardisé sous l’appellation ARINC 429 (1966)
+• Caractéristiques:
+• Câble paire torsadée blindée
+• Taille des messages : 32 bits
+• Simplicité : Adressage par label + données
+• Débit : 12 Kbit/s ou 100 Kbits/s
+• Communication unidirectionnelle
+
+39
+
+Architecture répartie : ARINC 429
+• Topologie
+•
+•
+•
+•
+
+Bus mono-emetteur;
+Multi-destinataires : 20 maximum ( 95% < 10 récepteurs sur A340);
+Longueur : 100 m maximum;
+Sur un équipement, plusieurs bus en émission et en réception.
+
+A
+
+LRU2
+
+B
+
+C
+Paire torsadée
+
+3 bus:
+• A vers B, C, D et E
+• B vers A
+• E vers A
+
+D
+
+E
+40
+
+Architecture répartie : ARINC 429
+• Message (mot ARINC 429)
+•
+•
+
+constitué de 32 bits
+Les champs :
+•
+
+Le label (8 bits), il identifie le type de l’information transmise, utilisé par les
+récepteurs pour sélectionner la donnée
+
+•
+
+Les données (19 bits) qui peut être:
+•
+•
+•
+•
+
+des données numériques
+l ’état de discrets
+des données de maintenance et des acquittements
+des caractères (Alphabet ISO)
+
+• Autres paramètres :
+•
+•
+•
+
+SDI (Source/Destination Identifier) : Identification de l’émetteur et des receveurs
+SSM (Sign/Status Matrix) : Type et Validité de la donnée
+P : Bit de parité (contrôle d’erreur)
+
+41
+
+Architecture répartie
+• Ses avantages et limitations :
+Déterminisme local sur chaque bus;
+Simplicité (label + info), impact mineur du nombre de
+récepteurs sur le bus (on se branche et on écoute).
+Débits faibles
+Communication unidirectionnelle
+Câblage important
+Limitation du choix de format de données sur A429 (ex : 20 bits
+pour coder des paramètres)
+Évolutivité par la modification du câblage (Nouvel équipement
+=> nouveau câblage)
+Difficultés pour supporter des protocoles de communication
+sophistiqués
+42
+
+Évolution des besoins (Moderne)
+• Depuis l’ A300
+• Augmentation du nombre de fonctions informatisées
+• FMS : Flight Management System
+• Fuel Management System
+• Nouvelles fonctionnalités pour la sécurité du vol :
+• Flight envelop protection
+• Ground proximity warning
+• Traffic collision avoidance
+• Nouvelles fonctionnalités pour améliorer la maintenance :
+• Monitoring des systèmes
+• Nouvelles fonctionnalités pour les passagers :
+• In Flight Entertainment
+
+43
+
+Évolution des besoins
+• Depuis l’ A300 (conséquences indirectes) :
+•
+•
+•
+
+•
+
+Pour chaque système, un ou plusieurs calculateurs dédiés;
+Nouvel aircraft => Nouveaux calculateurs;
+Nouveau calculateur => Nouveaux coûts de développement :
+• Part number coûts;
+• Documentation;
+• Plus de câbles;
+• Plus de puissance;
+• Plus de sources de manque de fiabilité;
+• Risque d’obsolescence;
+Impact sur les compagnies :
+• Maintenance (matériel nécessaire);
+• Outillage;
+• Augmentation du nombre d’erreurs;
+44
+
+Évolution des besoins…
+• Depuis l’A300 (autres conséquences) :
+• Durant le cycle de vie d’un avion :
+•
+•
+
+Nombreuses mises à jour fonctionnelles;
+Nombreux changements de matériels obsolètes;
+
+• => Temps et coûts importants
+• Chaque calculateur est défini pour un système d’un avion :
+•
+•
+•
+
+La partie software + OS
+La partie Hardware
+Développé par un fournisseur
+
+• Augmentation du câblage :
+•
+
+Jusqu’à 100km dans un avion
+45
+
+Évolution des besoins
+
+46
+
+Évolution des besoins
+
+368
+253
+
+Nombre d'équipements
+250
+
+160
+
+136
+
+Logiciel embarqué
+
+60
+
+Nombre de bus numériques
+
+Puissance de calculs embarquée
+
+A300 (1972)
+
+A310 (1983)
+
+A320 (1988)
+
+A340 (1993)
+
+A380 (2007)
+
+47
+
+Évolution des besoins
+Nouveaux besoins :
+• Échanges importants de données :
+•
+
+Téléchargement d’équipements;
+
+•
+
+Mise à jour de logiciels sur les calculateurs;
+
+• Accroissement des communications :
+•
+
+Augmentation du nombre de fonctions;
+
+•
+
+Intégration croissante des systèmes;
+
+•
+
+Bidirectionnelles, commande réponse, données avec acquittement, etc.
+
+=> Besoin de liaisons bidirectionnelles
+• Augmentation du partage d’informations :
+•
+
+Interdépendance des systèmes de plus en plus importante;
+
+•
+
+Augmentation des échanges entre les fonctions;
+
+=> Accès à toutes les informations
+48
+
+Évolution des besoins
+• Nouveaux besoins :
+• Flexibilité des architectures de communication :
+•
+•
+
+Gestion des options;
+Modification des architectures;
+
+=> Simplification du câblage
+• Supporter des Protocoles de communication de plus en plus
+complexes
+•
+
+Reprise d’erreur, acquittement , etc..
+
+=> Données protocolaires plus importantes
+• Ouverture des communications
+•
+
+Les systèmes avioniques ne sont plus isolés, communication avec un monde
+ouvert
+
+=> Utilisation de protocoles standards de communication
+
+49
+
+Évolution des besoins
+• Nouveaux besoins :
+• Augmentation des besoins en ressources de calcul
+• Nécessité de partage des ressources
+• ressources de traitement partagées
+• Concurrence des applications
+=> Mise en place d’exécutif temps réel
+
+50
+
+Évolution des besoins
+• Les systèmes avioniques sont critiques :
+=> leur défaillance met en danger l’équipage ou les passagers
+
+• Déterminisme
+=> Comportement connu et maîtrisé
+
+• Sûreté
+=> Pas de défaillance
+
+• Sécurité
+=> Robustesse aux malveillances
+
+• Disponibilité
+=> Systèmes essentiels
+
+51
+
+Évolution des besoins
+• Communications avioniques : rôle majeur sur nos avions
+• Maillon essentiel de toutes les "fonctions clés"
+=> fiabilité et l'efficacité opérationnelle de l ’avion
+• Elles prennent de plus en plus d’importance (augmentation de l'interdépendance des
+systèmes)
+
+•
+
+Enjeux :
+•
+•
+•
+•
+•
+
+
+
+Réduction des coûts
+Certification
+Evoluer… Mais pas trop
+Maintenabilité
+Poids de l’avion
+
+Réduction des
+coûts
+
+52
+
+Évolution des besoins
+• Certification
+• Dossier lourd et complet
+
+• Evoluer… mais pas trop
+• Surcoût des fournisseurs
+
+• Poids de l’avion
+• Spécifications vendues (A400M en surpoids de 12 tonnes)
+• Moteurs
+• Carburant
+
+Maintenabilité : exemple A380
+• Spécifications : 97-98% de la maintenance en escale doit pouvoir se faire en moins de 45
+minutés.
+• Réalité… moins de 90%
+53
+
+Évolution des besoins
+
+•
+
+33% => coût de l’avionique (équipements numériques et des
+logiciels) par rapport au coût d’un avion;
+
+•
+
+50% => Durée de la phase de validation de l’avionique par
+rapport au temps de développement total d’un avion.
+
+54
+
+

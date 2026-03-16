@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./components.css">
+    <!-- KaTeX — rendu mathématique -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.35/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    { left: "$$", right: "$$", display: true },
+                    { left: "$",  right: "$",  display: false }
+                ],
+                throwOnError: false
+            });
+        });
+    </script>
+    <script src="./section-utils.js" defer></script>
+</head>
+<body class="mode-detailed">
+
+    <h2>Modèle de défaillance de systèmes complexes — Systèmes redondants</h2>
+
+    <!-- MODE RÉSUMÉ -->
+    <div class="compact-content">
+        <h3 style="margin-top: 0;">Synthèse</h3>
+        <ul>
+            <li><strong>Panne unique — les taux s'additionnent</strong> — Pour un système qui tombe en panne dès qu'un seul composant défaille, la probabilité de défaillance est $P\{E_{SF}\} = \lambda_S \cdot t$ avec $\lambda_S = \sum_{k=1}^{N} \lambda_k$. L'approximation $\lambda t \ll 1$ rend les événements quasi-disjoints, donc les probabilités s'additionnent. C'est le pire cas : chaque composant ajouté dégrade la fiabilité globale.</li>
+            <li><strong>Panne multiple d'ordre $N$ — les probabilités se multiplient</strong> — Un système triplex ne tombe en panne que si les 3 voies défaillent. La probabilité est $P\{E_{SF}\} = (\lambda t)^3$. Chaque niveau de redondance divise la probabilité par $\lambda t \approx 10^{-4}$, un facteur 10 000. La chaîne de Markov montre que les taux décroissent ($3\lambda \to 2\lambda \to \lambda$) car il reste de moins en moins de voies actives à défaillir.</li>
+            <li><strong>Autodétection — convertir l'ordre de la panne</strong> — Sans détection (identification par comparaison), 2 pannes suffisent à faire tomber le système : $P\{E_{SF}\} = 3(\lambda t)^2 \approx 3 \times 10^{-8}\,\text{h}^{-1}$, insuffisant pour l'A380. Avec un taux de couverture $c = 0{,}9$, une voie qui se détecte se désactive proprement, reportant la défaillance critique à 3 pannes : $P\{E_{SF}\} \approx 3(1-c)(\lambda t)^2 = 3 \times 10^{-9}\,\text{h}^{-1}$.</li>
+        </ul>
+    </div>
+
+    <!-- MODE DÉTAILLÉ -->
+    <div class="detailed-content">
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exemple de système complexe — la chaîne de commande de vol</h3>
+
+        <p>
+            Un système avionique n'est jamais un composant isolé. Il s'agit d'une
+            <strong>chaîne fonctionnelle</strong> reliant plusieurs sous-systèmes
+            dont chacun peut défaillir indépendamment. Pour construire un modèle
+            de défaillance réaliste, il faut d'abord identifier les composants,
+            leurs états possibles et les hypothèses de modélisation.
+        </p>
+
+        <h4>La chaîne de commande de gouverne</h4>
+
+        <p>
+            L'exemple fil conducteur du cours est la chaîne de commande d'une
+            gouverne (aileron, gouverne de profondeur ou de direction).
+            Le pilote agit sur le <strong>manche de pilotage</strong> (MP) ;
+            ce signal est traité par les <strong>commandes de vol</strong> (CV) —
+            le calculateur — qui envoie un ordre à un <strong>actionneur</strong>
+            (ACT) alimenté en hydraulique (HYD) et en électrique (EL) pour déplacer
+            physiquement la <strong>gouverne</strong>.
+        </p>
+
+        <div class="figure-box">
+            <!-- Diagramme en blocs de la chaîne -->
+            <div style="display:flex; flex-direction:column; align-items:center; gap:1.25rem; padding:0.5rem 0;">
+                <!-- Ligne sources d'énergie -->
+                <div style="display:flex; gap:4rem; justify-content:center;">
+                    <div style="padding:0.6rem 1.2rem; border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; font-size:0.9rem; text-align:center; background:rgba(214,117,86,0.08);">
+                        Génération<br>électrique
+                    </div>
+                    <div style="padding:0.6rem 1.2rem; border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; font-size:0.9rem; text-align:center; background:rgba(96,165,250,0.08);">
+                        Génération<br>hydraulique
+                    </div>
+                </div>
+                <!-- Flèches vers actionneur -->
+                <div style="display:flex; gap:4rem; justify-content:center;">
+                    <div style="color:var(--accent); font-size:1.2rem;">↓ EL</div>
+                    <div style="color:#93c5fd; font-size:1.2rem;">↓ HYD</div>
+                </div>
+                <!-- Chaîne principale -->
+                <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; justify-content:center;">
+                    <div style="padding:0.6rem 1rem; border:2px solid rgba(255,255,255,0.25); border-radius:8px; font-size:0.9rem; text-align:center;">Manche<br><small style="color:var(--text-secondary);">(MP)</small></div>
+                    <div style="color:var(--accent); font-size:1.4rem;">→</div>
+                    <div style="padding:0.6rem 1rem; border:2px solid rgba(214,117,86,0.5); border-radius:8px; font-size:0.9rem; text-align:center; background:rgba(214,117,86,0.07);">Commandes<br>de vol <small style="color:var(--text-secondary);">(CV)</small></div>
+                    <div style="color:var(--accent); font-size:1.4rem;">→</div>
+                    <div style="padding:0.6rem 1rem; border:2px solid rgba(255,255,255,0.25); border-radius:8px; font-size:0.9rem; text-align:center;">Actionneur<br><small style="color:var(--text-secondary);">(ACT)</small></div>
+                    <div style="color:var(--accent); font-size:1.4rem;">→</div>
+                    <div style="padding:0.6rem 1rem; border:2px solid rgba(52,211,153,0.4); border-radius:8px; font-size:0.9rem; text-align:center; background:rgba(52,211,153,0.05);">Gouverne</div>
+                </div>
+            </div>
+            <figcaption>Fig. 1 — Chaîne fonctionnelle de commande de gouverne. Cinq composants peuvent défaillir : MP, CV, ACT, HYD et EL. La gouverne ne se déplace que si <em>tous</em> fonctionnent correctement.</figcaption>
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — relais sportif :</strong> Cette chaîne fonctionne comme un
+            relais de 5 coureurs. Peu importe lequel trébuche — si l'un d'eux lâche le
+            bâton, l'équipe est éliminée. La chaîne de commande de vol est exactement cela :
+            5 "maillons" en série, chacun indispensable. Un seul défaillant arrête
+            l'ensemble. Ce type d'architecture est la <em>pire configuration possible</em>
+            pour la fiabilité — mais c'est la réalité d'un système simplex non redondant.
+        </div>
+
+        <h4>États du système et hypothèses de modélisation</h4>
+
+        <p>
+            On attribue à l'ensemble du système les états suivants, en cohérence avec
+            les états composants ($C$ = correct, $F$ = fautif) :
+        </p>
+
+        <dl class="key-value">
+            <dt>$E_{SC}$</dt><dd>Système <strong>correct</strong> — tous les composants fonctionnent.</dd>
+            <dt>$E_{SF}$</dt><dd>Système <strong>défaillant</strong> — au moins un composant a cessé de fonctionner.</dd>
+            <dt>$E_{SFS}$</dt><dd>Système défaillant <em>en raison d'un capteur</em> défaillant (sous-cas de $E_{SF}$).</dd>
+            <dt>$E_{SFi}$</dt><dd>Système défaillant <em>à cause du composant $i$</em> uniquement (sous-cas de $E_{SF}$).</dd>
+        </dl>
+
+        <p>Les hypothèses de modélisation sont les suivantes :</p>
+
+        <ul>
+            <li><strong>Défaillance au premier composant perdu</strong> — le système entre dans l'état $E_{SF}$ dès qu'un seul de ses composants défaille. Il n'y a aucune redondance.</li>
+            <li><strong>Condition initiale parfaite</strong> — à $t = 0$ (décollage), tous les composants sont corrects : $P\{E_{SC}\}(0) = 1$.</li>
+            <li><strong>Taux de défaillance constants</strong> — chaque composant a un taux de défaillance propre : $\lambda_{MP},\, \lambda_{CV},\, \lambda_{ACT},\, \lambda_{HYD},\, \lambda_{EL}$.</li>
+            <li><strong>Objectif</strong> — calculer $P\{E_{SF}\}$ après une mission d'une heure.</li>
+        </ul>
+
+        <div class="callout-info">
+            <strong>Pourquoi cinq taux distincts ?</strong> Chaque type de composant a une
+            physique de défaillance différente. Un calculateur électronique a un taux typique
+            de $10^{-4}\ \text{h}^{-1}$, tandis qu'une génération hydraulique (pompe, circuits)
+            peut avoir un taux différent. L'analyse de sûreté doit utiliser les valeurs
+            certifiées du fabricant pour chaque équipement.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slide 127</p>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Cas de panne unique — probabilité de défaillance d'un système à $N$ composants</h3>
+
+        <p>
+            On étudie d'abord le cas le plus simple : le système défaille à la
+            <strong>première panne</strong>, quel que soit le composant touché.
+            C'est le cas d'un système <em>non redondant</em> (simplex).
+        </p>
+
+        <h4>Diagramme d'états du système global</h4>
+
+        <p>
+            L'état global du système est le tuple des états de chaque composant.
+            Pour 5 composants $\{MP\,|\,CV\,|\,ACT\,|\,HYD\,|\,EL\}$, l'état
+            initial est $C|C|C|C|C$. À la première défaillance d'un composant
+            quelconque, on bascule vers l'état $E_{SF}$ — et comme le système
+            n'est pas réparé en vol, on y reste.
+        </p>
+
+        <div class="figure-box">
+            <!-- Diagramme de Markov simplifié panne unique -->
+            <div style="display:flex; align-items:center; justify-content:center; gap:3rem; padding:1rem 0; flex-wrap:wrap;">
+                <!-- État ESC -->
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                    <div style="padding:0.6rem 1.2rem; border-radius:30px; border:2px solid var(--accent); font-style:italic; font-size:1rem; background:rgba(214,117,86,0.07);">$E_{SC}$</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary); text-align:center;">C|C|C|C|C<br>$P\{E_{SC}\}$</div>
+                </div>
+                <!-- Flèche avec taux -->
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.4rem;">
+                    <div style="font-size:0.8rem; color:var(--text-secondary); font-style:italic;">$\lambda_{SYS} = \lambda_{MP} + \cdots + \lambda_{EL}$</div>
+                    <div style="font-size:2rem; color:var(--accent);">→</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary); font-style:italic;">$\dot{P}\{E_{SF}\} = \lambda_{SYS} \cdot P\{E_{SC}\}$</div>
+                </div>
+                <!-- État ESF -->
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+                    <div style="padding:0.6rem 1.2rem; border-radius:30px; border:2px solid rgba(248,113,113,0.6); font-style:italic; font-size:1rem; background:rgba(248,113,113,0.07);">$E_{SF}$</div>
+                    <div style="font-size:0.78rem; color:var(--text-secondary); text-align:center;">F|C|C|C|C<br>ou C|F|C|C|C<br>ou … (5 sous-cas)</div>
+                </div>
+            </div>
+            <figcaption>Fig. 2 — Le système à 5 composants passe de $E_{SC}$ à $E_{SF}$ dès que l'un quelconque défaille. Le taux de transition global est la <em>somme</em> des taux individuels.</figcaption>
+        </div>
+
+        <h4>Décomposition en sous-événements</h4>
+
+        <p>
+            L'événement de défaillance $E_{SF}$ est l'<strong>union</strong> des
+            événements de défaillance de chaque composant :
+        </p>
+
+        <div class="formula-box">
+            $$E_{SF} = E_{SF1} \cup E_{SF2} \cup \cdots \cup E_{SFn}$$
+            <span class="formula-label">Décomposition de la défaillance système en sous-événements composant</span>
+        </div>
+
+        <p>Donc :</p>
+
+        <div class="formula-box">
+            $$P\{E_{SF}\} = P\{E_{SF1} \cup E_{SF2} \cup \cdots \cup E_{SFn}\}$$
+            <span class="formula-label">Formule des probabilités de l'union</span>
+        </div>
+
+        <h4>Simplification par l'approximation des événements rares</h4>
+
+        <p>
+            Pour une mission d'une heure et des taux typiques ($\lambda \leq 10^{-4}\ \text{h}^{-1}$),
+            on a $\lambda \cdot t \ll 1$. Dans ce régime, la probabilité que
+            <em>deux composants défaillent simultanément</em> est du second ordre :
+        </p>
+
+        <div class="formula-box">
+            $$P\{E_{SF1} \cap E_{SF2}\} \approx (\lambda t)^2 \approx 10^{-8} \ll \lambda t \approx 10^{-4}$$
+            <span class="formula-label">Les intersections sont négligeables pour $\lambda t \ll 1$</span>
+        </div>
+
+        <p>
+            Les événements $E_{SFi}$ sont donc quasi-disjoints, et la formule d'inclusion-exclusion
+            se réduit à une simple somme :
+        </p>
+
+        <div class="theorem-box" data-label="Résultat clé — panne unique">
+            Pour $\lambda \cdot t \ll 1$ :
+            $$P\{E_{SF1} \cup E_{SF2} \cup \cdots \cup E_{SFn}\} \approx \sum_{i=1}^{n} P\{E_{SFi}\}$$
+        </div>
+
+        <div class="callout-info">
+            <strong>Intuition probabiliste :</strong> La probabilité de l'union de plusieurs
+            événements rares qui ne se croisent presque jamais est approximativement la somme
+            de leurs probabilités. Pensez à la probabilité d'être renversé par une voiture
+            bleue <em>ou</em> par une voiture rouge lors d'une traversée : c'est (presque)
+            la somme des deux probabilités, car être touché par les deux en même temps est
+            un événement d'ordre 2 — négligeable en pratique.
+        </div>
+
+        <h4>Calcul de $P\{E_{SFi}\}$ et résultat final</h4>
+
+        <p>
+            Pour chaque composant $i$, son taux de défaillance est $\lambda_{SFi}$.
+            Avec la condition initiale $P\{E_{SC}\}(0) = 1$ et l'hypothèse $\lambda t \ll 1$ :
+        </p>
+
+        <ul class="steps">
+            <li>L'équation différentielle du composant $i$ : $\dot{P}\{E_{SFi}\} = \lambda_{SFi} \cdot P\{E_{SC}\} = \lambda_{SFi} \times 1$</li>
+            <li>Par intégration directe : $P\{E_{SFi}\} = \lambda_{SFi} \cdot t$</li>
+            <li>La probabilité de défaillance système : $P\{E_{SF}\} = \sum_{i=1}^{n} \lambda_{SFi} \cdot t = \left(\sum_{i=1}^{n} \lambda_{SFi}\right) \cdot t = \lambda_{SYS} \cdot t$</li>
+            <li>La valeur à $t = 1\ \text{h}$ : $P\{E_{SF}\}(1\,\text{h}) = \lambda_{SYS}$</li>
+        </ul>
+
+        <div class="two-col">
+            <div class="formula-box">
+                $$\boxed{P\{E_{SF}\} = \lambda_S \cdot t}$$
+                <span class="formula-label">Probabilité de défaillance — panne unique</span>
+            </div>
+            <div class="formula-box">
+                $$\boxed{\lambda_S = \sum_{k=1}^{N} \lambda_k}$$
+                <span class="formula-label">Taux de défaillance système — somme des taux composants</span>
+            </div>
+        </div>
+
+        <div class="callout-warning">
+            <strong>Conséquence architecturale :</strong> Chaque composant ajouté à une
+            chaîne série <em>dégrade</em> la fiabilité du système. Si l'on double le nombre
+            de composants (sans redondance), on double $\lambda_S$ et donc $P\{E_{SF}\}$.
+            C'est la raison pour laquelle les systèmes simplex ne peuvent pas atteindre les
+            objectifs de sûreté des fonctions critiques en avionique — où l'on cible
+            $P\{E_{SF}\} < 10^{-9}\ \text{h}^{-1}$ pour les défaillances catastrophiques.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 128–129</p>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Exercice 4 — Premier calculateur d'un système triplex</h3>
+
+        <div class="highlight-box">
+            <strong>Énoncé :</strong> On considère un système redondant avec
+            trois calculateurs de commandes de vol (Voie 1, Voie 2, Voie 3)
+            travaillant en parallèle. L'actionneur somme les trois commandes
+            (principe de vote par sommation). On suppose que la manche ($\lambda_{MC} = 0$)
+            et l'actionneur ($\lambda_{ACT} = 0$) sont parfaits. Trouver la probabilité
+            de défaillance du <em>premier calculateur</em> pour une mission d'une heure.
+        </div>
+
+        <p>
+            La question porte uniquement sur la probabilité que la
+            <strong>Voie 1</strong> tombe en panne, indépendamment de l'état
+            des autres. C'est donc la probabilité de défaillance d'un composant
+            <em>unique</em>, sans considération de redondance — le système reste
+            opérationnel même si la Voie 1 cède (les Voies 2 et 3 continuent).
+        </p>
+
+        <dl class="key-value">
+            <dt>Taux de défaillance de chaque voie</dt><dd>$\lambda_{CV}$ (identique pour les 3 voies)</dd>
+            <dt>Condition initiale</dt><dd>$P\{E_{SC}\}(0) = 1$ — toutes les voies correctes au départ</dd>
+            <dt>Hypothèse</dt><dd>$\lambda_{CV} \cdot t \ll 1$</dd>
+        </dl>
+
+        <p>
+            La Voie 1 est un composant isolé. Par le résultat fondamental
+            $P_F(t) = \lambda \cdot t$ :
+        </p>
+
+        <div class="formula-box">
+            $$P\{\text{Voie 1 défaillante}\} = \lambda_{CV} \cdot t = \lambda_{CV} \times 1\,\text{h} = \lambda_{CV}$$
+            <span class="formula-label">Probabilité de défaillance du premier calculateur — mission de 1 heure</span>
+        </div>
+
+        <div class="callout-info">
+            <strong>Distinction importante :</strong> La Voie 1 qui tombe en panne
+            <em>n'implique pas que le système tombe en panne</em>. Dans un triplex,
+            les deux voies restantes (Voie 2 et Voie 3) maintiennent la fonction.
+            La question de l'exercice porte sur la fiabilité individuelle d'une voie,
+            pas sur la fiabilité du système global — qui sera calculée dans la section suivante.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slide 130</p>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Cas de pannes multiples — le système triplex et la chaîne de Markov</h3>
+
+        <p>
+            On passe maintenant au calcul de la probabilité de défaillance du
+            <strong>système triplex complet</strong>. Le système ne tombe en
+            panne que si les <em>trois voies</em> ont toutes défailli. C'est
+            la pleine puissance de la redondance.
+        </p>
+
+        <h4>Description du système triplex</h4>
+
+        <ul>
+            <li><strong>Trois calculateurs identiques</strong> (Voie 1, Voie 2, Voie 3) travaillant en parallèle, chacun avec le même taux $\lambda_{Voie} = \lambda$.</li>
+            <li><strong>Sommation par l'actionneur</strong> — l'actionneur additionne les commandes des voies actives. Si une voie est défaillante et désactivée, les deux autres continuent.</li>
+            <li><strong>Auto-isolation irréaliste</strong> — chaque voie identifie ses propres erreurs et se désactive automatiquement en cas de panne. Cette hypothèse sera levée dans la section suivante.</li>
+            <li><strong>Simplification</strong> — $\lambda_C = \lambda_{ACT} = 0$ : la manche et l'actionneur sont supposés parfaits pour isoler l'effet de la redondance des calculateurs.</li>
+        </ul>
+
+        <div class="callout-warning">
+            <strong>L'hypothèse d'auto-isolation est irréaliste</strong> car un composant
+            défaillant ne sait généralement pas qu'il est défaillant — s'il le savait,
+            il pourrait se corriger. En pratique, ce sont les autres voies qui détectent
+            la divergence d'une voie et provoquent son isolation. Cette hypothèse idéale
+            est étudiée ici pour établir une borne théorique, avant d'examiner les cas
+            réalistes avec identification externe ou autodétection partielle.
+        </div>
+
+        <h4>Construction de la chaîne de Markov</h4>
+
+        <p>
+            L'état du système est le tuple des états des trois voies
+            $\{Voie\,1\,|\,Voie\,2\,|\,Voie\,3\}$. Par symétrie des trois voies identiques,
+            seul le <strong>nombre de voies défaillantes</strong> importe — pas laquelle a cédé.
+            On obtient 4 états distincts :
+        </p>
+
+        <div class="figure-box">
+            <div style="display:flex; align-items:flex-start; gap:2rem; justify-content:center; flex-wrap:wrap; padding:1rem 0;">
+                <!-- Colonne états système -->
+                <div style="display:flex; flex-direction:column; align-items:center; gap:1.5rem;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:-0.5rem;">État système</div>
+                    <div style="width:42px; height:42px; border-radius:50%; border:2px solid rgba(52,211,153,0.6); display:flex; align-items:center; justify-content:center; font-style:italic; background:rgba(52,211,153,0.07);">$C$</div>
+                    <div style="width:42px; height:42px; border-radius:50%; border:2px solid rgba(52,211,153,0.6); display:flex; align-items:center; justify-content:center; font-style:italic; background:rgba(52,211,153,0.07);">$C$</div>
+                    <div style="width:42px; height:42px; border-radius:50%; border:2px solid rgba(52,211,153,0.6); display:flex; align-items:center; justify-content:center; font-style:italic; background:rgba(52,211,153,0.07);">$C$</div>
+                    <div style="width:42px; height:42px; border-radius:50%; border:2px solid rgba(248,113,113,0.6); display:flex; align-items:center; justify-content:center; font-style:italic; background:rgba(248,113,113,0.07);">$F$</div>
+                </div>
+                <!-- Colonne états voies + transitions -->
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0; min-width:200px;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.75rem;">Voies</div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(52,211,153,0.4); font-size:0.9rem; background:rgba(52,211,153,0.07);">C | C | C</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; padding:0.3rem 0; color:var(--text-secondary); font-size:0.82rem; font-style:italic;">
+                        <span>↓ $3\lambda$</span>
+                        <span style="font-size:0.72rem; color:var(--text-muted);">(3 voies peuvent défaillir)</span>
+                    </div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(255,255,255,0.25); font-size:0.9rem; background:rgba(255,255,255,0.04);">F | C | C</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; padding:0.3rem 0; color:var(--text-secondary); font-size:0.82rem; font-style:italic;">
+                        <span>↓ $2\lambda$</span>
+                        <span style="font-size:0.72rem; color:var(--text-muted);">(2 voies restantes)</span>
+                    </div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(255,255,255,0.25); font-size:0.9rem; background:rgba(255,255,255,0.04);">F | F | C</div>
+                    <div style="display:flex; flex-direction:column; align-items:center; padding:0.3rem 0; color:var(--text-secondary); font-size:0.82rem; font-style:italic;">
+                        <span>↓ $\lambda$</span>
+                        <span style="font-size:0.72rem; color:var(--text-muted);">(1 voie restante)</span>
+                    </div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(248,113,113,0.5); font-size:0.9rem; background:rgba(248,113,113,0.07);">F | F | F</div>
+                </div>
+                <!-- Colonne probabilités et équations -->
+                <div style="display:flex; flex-direction:column; gap:0; min-width:200px;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.75rem;">Probabilités</div>
+                    <div style="font-size:0.9rem; padding:0.5rem 0; font-style:italic;">$P_1(t)$</div>
+                    <div style="height:2.8rem; display:flex; align-items:center;">
+                        <span style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\dot{P}_2 = 3\lambda P_1$</span>
+                    </div>
+                    <div style="font-size:0.9rem; padding:0.5rem 0; font-style:italic;">$P_2(t)$</div>
+                    <div style="height:2.8rem; display:flex; align-items:center;">
+                        <span style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\dot{P}_3 = 2\lambda P_2$</span>
+                    </div>
+                    <div style="font-size:0.9rem; padding:0.5rem 0; font-style:italic;">$P_3(t)$</div>
+                    <div style="height:2.8rem; display:flex; align-items:center;">
+                        <span style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\dot{P}_4 = \lambda P_3$</span>
+                    </div>
+                    <div style="font-size:0.9rem; padding:0.5rem 0; font-style:italic; color:#fca5a5;">$P_4(t) = P\{E_{SF}\}$</div>
+                </div>
+            </div>
+            <figcaption>Fig. 3 — Chaîne de Markov du système triplex avec auto-isolation. Le taux de transition décroît à chaque étape car il reste de moins en moins de voies actives susceptibles de défaillir.</figcaption>
+        </div>
+
+        <div class="callout-info">
+            <strong>Pourquoi les taux décroissent : $3\lambda \to 2\lambda \to \lambda$ ?</strong>
+            Imaginez 3 ampoules en parallèle qui grillent indépendamment. Quand toutes les
+            3 sont allumées, la probabilité qu'<em>une quelconque</em> grille par unité de
+            temps est $3 \times \lambda$. Quand il n'en reste que 2, c'est $2\lambda$.
+            Et quand il n'en reste plus qu'une, c'est $\lambda$. C'est exactement le
+            raisonnement pour les voies : le taux de passage à l'état suivant est
+            $(\text{nb de voies encore correctes}) \times \lambda$.
+        </div>
+
+        <h4>Résolution de la chaîne de Markov</h4>
+
+        <p>
+            On résout les équations différentielles par intégrations successives,
+            en utilisant $P_1(t) \approx 1$ (l'approximation $\lambda t \ll 1$ garantit
+            que $P_1$ reste quasi-constant — la plupart du temps, les 3 voies sont encore
+            correctes).
+        </p>
+
+        <div class="proof-box">
+            <strong>Intégration en cascade :</strong><br><br>
+            $\ddot{P}_4 = \lambda \dot{P}_3 = 2\lambda^2 \dot{P}_2 = 3!\,\lambda^3 P_1 \approx 3!\,\lambda^3$<br><br>
+            Intégration une première fois ($\ddot{P}_4 = 6\lambda^3$, constante) :
+            $\dot{P}_4 = 6\lambda^3\,t$<br><br>
+            Intégration une deuxième fois :
+            $P_4 = 6\lambda^3 \cdot \frac{t^2}{2} = 3\lambda^3 t^2$<br><br>
+            Intégration une troisième fois :
+            $P_4 = 3\lambda^3 \cdot \frac{t^3}{3} = \lambda^3 t^3 = (\lambda t)^3$
+        </div>
+
+        <div class="formula-box">
+            $$\boxed{P\{E_{SF}\} = (\lambda t)^3}$$
+            <span class="formula-label">Probabilité de défaillance du système triplex — panne triple requise</span>
+        </div>
+
+        <div class="theorem-box" data-label="Principe général — chaîne de Markov">
+            Une panne multiple d'ordre $N$ s'exprime comme une <strong>chaîne de $N$ défaillances uniques</strong>.
+            La probabilité de défaillance d'un système redondant à $N$ voies identiques
+            (qui tombe en panne seulement après $N$ défaillances) est :
+            $$P\{E_{SF}\} = (\lambda t)^N$$
+            Chaque niveau de redondance divise la probabilité par $\lambda t \approx 10^{-4}$ :
+            un triplex ($N=3$) est $(\lambda t)^2 \approx 10^{-8}$ fois plus fiable qu'un simplex.
+        </div>
+
+        <div class="compare-grid">
+            <div class="compare-item good" data-label="Triplex — 3 voies">
+                <p>$P\{E_{SF}\} = (\lambda t)^3 = 10^{-12}$ pour $\lambda t = 10^{-4}$<br>
+                3 pannes simultanées requises.<br>
+                Gain : facteur $10^{-8}$ vs simplex.</p>
+            </div>
+            <div class="compare-item neutral" data-label="Duplex — 2 voies">
+                <p>$P\{E_{SF}\} = (\lambda t)^2 = 10^{-8}$<br>
+                2 pannes simultanées requises.<br>
+                Gain : facteur $10^{-4}$ vs simplex.</p>
+            </div>
+            <div class="compare-item bad" data-label="Simplex — 1 voie">
+                <p>$P\{E_{SF}\} = \lambda t = 10^{-4}$<br>
+                1 seule panne suffit.<br>
+                Aucun gain.</p>
+            </div>
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 133–135</p>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Identification des défaillances par comparaison — sans autodétection</h3>
+
+        <p>
+            L'hypothèse d'auto-isolation de la section précédente était irréaliste.
+            Dans ce scénario plus réaliste, les voies ne savent pas elles-mêmes
+            si elles sont défaillantes : c'est la <strong>comparaison des résultats
+            entre voies</strong> qui permet d'identifier une divergence.
+        </p>
+
+        <h4>Mécanisme de fonctionnement</h4>
+
+        <ul>
+            <li>Les trois voies calculent chacune leur commande et <strong>comparent leurs résultats mutuellement</strong>.</li>
+            <li>Si une voie diverge des deux autres, elle est <strong>désactivée</strong> — le système passe en mode <em>duplex</em> (deux voies restantes).</li>
+            <li>En mode duplex, si les deux voies restantes divergent, il est impossible de savoir laquelle a raison — le <strong>système est désactivé</strong> : c'est la défaillance.</li>
+            <li>Le taux de chaque voie est $\lambda_{Voie} = \lambda = 10^{-4}\ \text{h}^{-1}$.</li>
+        </ul>
+
+        <div class="tip-box">
+            <strong>Analogie — vote à majorité :</strong> C'est le principe du vote à
+            majorité. Avec 3 membres, si l'un vote différemment des deux autres, on
+            écarte son vote (il est "en panne"). Mais si les deux membres restants
+            divergent à leur tour, plus personne ne peut trancher — le comité est paralysé.
+            En avionique, cette paralysie correspond à la désactivation de l'ensemble
+            du système, ce qui constitue la défaillance.
+        </div>
+
+        <h4>Chaîne de Markov avec identification externe</h4>
+
+        <p>
+            La différence fondamentale avec le scénario précédent est que le système
+            <strong>passe en mode défaillant dès la 2ème panne</strong> (et non la 3ème),
+            car deux voies ne peuvent plus se départager mutuellement. La chaîne de
+            Markov ne comporte donc que 3 états, et l'état $F|F|C$ est directement l'état de défaillance.
+        </p>
+
+        <div class="figure-box">
+            <div style="display:flex; align-items:flex-start; gap:2rem; justify-content:center; flex-wrap:wrap; padding:1rem 0;">
+                <div style="display:flex; flex-direction:column; align-items:center; gap:0; min-width:200px;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.75rem;">Voies</div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(52,211,153,0.4); font-size:0.9rem; background:rgba(52,211,153,0.07);">C | C | C</div>
+                    <div style="padding:0.3rem 0; color:var(--text-secondary); font-size:0.82rem; font-style:italic;">↓ $3\lambda$</div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(255,255,255,0.25); font-size:0.9rem; background:rgba(255,255,255,0.04);">F | C | C</div>
+                    <div style="padding:0.3rem 0; color:var(--text-secondary); font-size:0.82rem; font-style:italic;">↓ $2\lambda$</div>
+                    <div style="padding:0.5rem 1.2rem; border-radius:20px; border:2px solid rgba(248,113,113,0.5); font-size:0.9rem; background:rgba(248,113,113,0.07);">F | F | C ← <strong>SYSTÈME DÉFAILLANT</strong></div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0; min-width:200px;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.75rem;">Équations</div>
+                    <div style="font-size:0.88rem; padding:0.5rem 0; font-style:italic;">$P_1(t) \approx 1$</div>
+                    <div style="height:1.8rem; display:flex; align-items:center;">
+                        <span style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\dot{P}_2 = 3\lambda P_1 \approx 3\lambda$</span>
+                    </div>
+                    <div style="font-size:0.88rem; padding:0.5rem 0; font-style:italic;">$P_2(t) = 3\lambda t$</div>
+                    <div style="height:1.8rem; display:flex; align-items:center;">
+                        <span style="font-size:0.82rem; color:var(--text-secondary); font-style:italic;">$\dot{P}_3 = 2\lambda P_2 = 6\lambda^2 t$</span>
+                    </div>
+                    <div style="font-size:0.88rem; padding:0.5rem 0; font-style:italic; color:#fca5a5;">$P_3(t) = 3\lambda^2 t^2 = 3(\lambda t)^2$</div>
+                </div>
+            </div>
+            <figcaption>Fig. 4 — Sans autodétection, le système se désactive dès la 2ème panne. Seules 2 pannes suffisent à mettre le système en défaillance. La chaîne s'arrête à l'état $F|F|C$.</figcaption>
+        </div>
+
+        <h4>Résolution et application numérique</h4>
+
+        <ul class="steps">
+            <li>$\ddot{P}_3 = 2\lambda \cdot \dot{P}_2 = 2\lambda \cdot 3\lambda = 6\lambda^2$ (constante)</li>
+            <li>$\dot{P}_3 = 6\lambda^2 \cdot t$</li>
+            <li>$P_3 = 3\lambda^2 t^2 = 3(\lambda t)^2$</li>
+            <li>Application : $\lambda = 10^{-4}\ \text{h}^{-1}$, $t = 1\ \text{h}$ : $P\{E_{SF}\} = 3 \times (10^{-4})^2 = 3 \times 10^{-8}\ \text{h}^{-1}$</li>
+        </ul>
+
+        <div class="formula-box">
+            $$P\{E_{SF}\} = 3(\lambda t)^2 = 3 \times 10^{-8}\ \text{h}^{-1}$$
+            <span class="formula-label">Probabilité de défaillance — triplex avec identification par comparaison, sans autodétection</span>
+        </div>
+
+        <div class="callout-danger">
+            <strong>Résultat insuffisant pour l'A380 :</strong> La probabilité
+            $3 \times 10^{-8}\ \text{h}^{-1}$ est 30 fois supérieure à la limite
+            $10^{-9}\ \text{h}^{-1}$ requise pour une défaillance catastrophique sur
+            l'A380. L'architecture triplex avec identification par comparaison seule
+            n'est pas assez sûre pour les fonctions les plus critiques — il faut
+            introduire l'autodétection pour atteindre l'objectif.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 136–137</p>
+
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <hr class="section-divider">
+        <h3>Autodétection d'erreurs — effet du taux de couverture $c$</h3>
+
+        <p>
+            L'autodétection améliore le scénario précédent : une voie défaillante peut
+            maintenant <em>parfois</em> détecter sa propre erreur et se désactiver
+            proprement, sans attendre la comparaison externe. Cela change radicalement
+            la structure de la chaîne de Markov — et la probabilité de défaillance finale.
+        </p>
+
+        <h4>Modélisation du taux de couverture $c$</h4>
+
+        <div class="highlight-box">
+            <strong>Définition :</strong> Le <strong>taux de couverture</strong> $c$ d'une
+            voie est la probabilité qu'une voie défaillante <em>détecte elle-même</em>
+            son erreur et se désactive proprement. On a $0 \leq c \leq 1$ :
+            <ul style="margin-top:0.5rem;">
+                <li>$c = 0$ : aucune autodétection — scénario précédent.</li>
+                <li>$c = 1$ : autodétection parfaite — la voie se désactive toujours (hypothèse irréaliste).</li>
+                <li>$c = 0{,}9$ : valeur typique — 90 % des défaillances sont auto-détectées.</li>
+            </ul>
+        </div>
+
+        <div class="tip-box">
+            <strong>Analogie — pilote qui perd connaissance :</strong> Un pilote qui
+            perd connaissance soudainement (défaillance abrupte) ne peut pas signaler
+            son incapacité — son co-pilote doit le détecter de l'extérieur. Mais si
+            le pilote ressent des signes avant-coureurs (malaise progressif), il peut
+            signaler lui-même son incapacité et passer les commandes — c'est l'équivalent
+            de l'autodétection. Le taux $c$ mesure la fréquence des défaillances
+            "progressives" que la voie peut auto-détecter, par opposition aux
+            défaillances "abruptes" non détectables.
+        </div>
+
+        <h4>Chaîne de Markov avec branchement probabiliste</h4>
+
+        <p>
+            Quand la deuxième voie tombe en panne (état $P|F|C$), il y a un
+            <strong>branchement probabiliste</strong> selon que cette panne est
+            détectée ($c$) ou non ($1-c$). Cela crée deux chemins distincts
+            vers la défaillance, notés $F_1$ et $F_2$ :
+        </p>
+
+        <div class="figure-box">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0; padding:1rem 0;">
+                <!-- État initial -->
+                <div style="padding:0.45rem 1.1rem; border-radius:20px; border:2px solid rgba(52,211,153,0.4); font-size:0.85rem; background:rgba(52,211,153,0.07);">C | C | C — $P_1$</div>
+                <div style="padding:0.25rem; font-size:0.8rem; color:var(--text-secondary); font-style:italic;">↓ $3\lambda$ — $\dot{P}_2 = 3\lambda P_1$</div>
+                <div style="padding:0.45rem 1.1rem; border-radius:20px; border:2px solid rgba(255,255,255,0.2); font-size:0.85rem; background:rgba(255,255,255,0.04);">P | C | C — $P_2$</div>
+                <div style="padding:0.25rem; font-size:0.8rem; color:var(--text-secondary); font-style:italic;">↓ $2\lambda$ — $\dot{P}_3 = 2\lambda P_2$</div>
+                <div style="padding:0.45rem 1.1rem; border-radius:20px; border:2px solid rgba(255,255,255,0.2); font-size:0.85rem; background:rgba(255,255,255,0.04);">P | F | C — $P_3$</div>
+                <!-- Branchement -->
+                <div style="display:flex; gap:4rem; margin-top:0.5rem; align-items:flex-start; flex-wrap:wrap; justify-content:center;">
+                    <!-- Branche gauche : détecté -->
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+                        <div style="font-size:0.8rem; color:var(--text-secondary); font-style:italic;">$c$ ↙ (détecté)</div>
+                        <div style="padding:0.45rem 1rem; border-radius:20px; border:2px solid rgba(52,211,153,0.3); font-size:0.82rem; background:rgba(52,211,153,0.04);">P | P | C — $P_4 = c \cdot P_3$</div>
+                        <div style="font-size:0.78rem; color:var(--text-secondary); font-style:italic;">↓ $\lambda$ — $\dot{P}_6 = \lambda P_4$</div>
+                        <div style="padding:0.4rem 1rem; border-radius:20px; border:2px solid rgba(248,113,113,0.5); font-size:0.82rem; background:rgba(248,113,113,0.07);">P | P | F — $P_6 = P\{F_2\}$</div>
+                        <div style="font-size:0.75rem; color:#fca5a5; margin-top:0.2rem;">3 pannes pour défaillir</div>
+                    </div>
+                    <!-- Branche droite : non détecté -->
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+                        <div style="font-size:0.8rem; color:var(--text-secondary); font-style:italic;">$(1{-}c)$ ↘ (non détecté)</div>
+                        <div style="padding:0.45rem 1rem; border-radius:20px; border:2px solid rgba(248,113,113,0.5); font-size:0.82rem; background:rgba(248,113,113,0.07);">P | P | P — $P_5 = (1-c) P_3$</div>
+                        <div style="font-size:0.78rem; color:#fca5a5; margin-top:0.2rem;">2 pannes suffisent</div>
+                        <div style="font-size:0.72rem; color:var(--text-secondary); font-style:italic;">(système $= F_1$)</div>
+                    </div>
+                </div>
+            </div>
+            <figcaption>Fig. 5 — Chaîne de Markov avec autodétection. Le branchement en $P_3$ crée deux chemins vers la défaillance : $F_1$ (non détection, 2 pannes) et $F_2$ (3ème panne après détection, 3 pannes). L'autodétection convertit une partie des défaillances d'ordre 2 en défaillances d'ordre 3.</figcaption>
+        </div>
+
+        <h4>Résolution des équations différentielles</h4>
+
+        <p>
+            Les deux chemins contribuent à $P\{E_{SF}\} = P\{F_1\} + P\{F_2\}$.
+        </p>
+
+        <p><strong>Chemin $F_1$ — défaillance non détectée (ordre 2) :</strong></p>
+
+        <ul class="steps">
+            <li>On reprend le résultat de la chaîne précédente : $P_3 = 3(\lambda t)^2$</li>
+            <li>$P\{F_1\} = P_5 = (1-c) \cdot P_3 = (1-c) \cdot 3(\lambda t)^2$</li>
+        </ul>
+
+        <p><strong>Chemin $F_2$ — 3ème panne après détection (ordre 3) :</strong></p>
+
+        <ul class="steps">
+            <li>$P_4 = c \cdot P_3 \approx c \cdot 3(\lambda t)^2$</li>
+            <li>$\dot{P}_6 = \lambda P_4 = c\lambda \cdot 3(\lambda t)^2 = 3c\lambda^3 t^2$</li>
+            <li>$P_6 = \int 3c\lambda^3 t^2\,dt = c\lambda^3 t^3 = c(\lambda t)^3$</li>
+            <li>$P\{F_2\} = P_6 = c(\lambda t)^3$</li>
+        </ul>
+
+        <div class="formula-box">
+            $$\boxed{P\{E_{SF}\} = (1-c)\cdot 3(\lambda t)^2 + c \cdot (\lambda t)^3}$$
+            <span class="formula-label">Probabilité de défaillance — triplex avec autodétection de taux $c$</span>
+        </div>
+
+        <h4>Analyse du terme dominant</h4>
+
+        <p>
+            Pour $\lambda t \ll 1$ et $c < 1$, le terme d'ordre 2 domine car
+            $(\lambda t)^2 \gg (\lambda t)^3$ :
+        </p>
+
+        <div class="theorem-box" data-label="Cas dominant — $\lambda t \ll 1$">
+            $$P\{E_{SF}\} \approx 3(1-c)(\lambda t)^2$$
+            Le terme d'ordre 3 est négligeable. Le taux de couverture $c$ joue un rôle direct :
+            plus $c$ est élevé, plus $(1-c)$ est faible, et plus la probabilité de défaillance
+            est réduite. La détection transforme efficacement le mécanisme dominant
+            d'une panne d'ordre 2 vers un comportement d'ordre 3.
+        </div>
+
+        <div class="callout-info">
+            <strong>Interprétation physique :</strong> Quand $c = 0{,}9$, 90 % des
+            deuxièmes défaillances se détectent et désactivent proprement la voie —
+            reportant la panne système à une <em>troisième</em> défaillance, d'ordre 3.
+            Seulement 10 % des deuxièmes défaillances échappent à la détection et
+            causent une panne d'ordre 2. C'est ce résidu de 10 % non détecté
+            ($(1-c) = 0{,}1$) qui domine la probabilité de défaillance finale.
+        </div>
+
+        <h4>Application numérique</h4>
+
+        <dl class="key-value">
+            <dt>Taux de défaillance par voie</dt><dd>$\lambda = 10^{-4}\ \text{h}^{-1}$</dd>
+            <dt>Taux de couverture</dt><dd>$c = 0{,}9$</dd>
+            <dt>Durée de la mission</dt><dd>$t = 1\ \text{h}$</dd>
+        </dl>
+
+        <ul class="steps">
+            <li>$(\lambda t)^2 = (10^{-4})^2 = 10^{-8}$</li>
+            <li>$(\lambda t)^3 = (10^{-4})^3 = 10^{-12}$ (terme d'ordre 3, négligeable)</li>
+            <li>Terme dominant : $3(1-c)(\lambda t)^2 = 3 \times 0{,}1 \times 10^{-8} = 3 \times 10^{-9}$</li>
+            <li>Terme d'ordre 3 : $c(\lambda t)^3 = 0{,}9 \times 10^{-12} \approx 10^{-12}$ (négligeable)</li>
+        </ul>
+
+        <div class="formula-box">
+            $$P\{E_{SF}\} \approx 3(1-c)(\lambda t)^2 = 0{,}1 \times 3 \times 10^{-8} = \mathbf{3 \times 10^{-9}\ \text{h}^{-1}}$$
+            <span class="formula-label">Application numérique — $\lambda = 10^{-4}\,\text{h}^{-1}$, $c = 0{,}9$, $t = 1\,\text{h}$</span>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card bad">
+                <span class="metric-value">$10^{-4}$</span>
+                <span class="metric-label">Simplex (1 voie)</span>
+            </div>
+            <div class="metric-card bad">
+                <span class="metric-value">$3{\times}10^{-8}$</span>
+                <span class="metric-label">Triplex sans détection</span>
+            </div>
+            <div class="metric-card good">
+                <span class="metric-value">$3{\times}10^{-9}$</span>
+                <span class="metric-label">Triplex $c=0{,}9$</span>
+            </div>
+            <div class="metric-card accent">
+                <span class="metric-value">$10^{-9}$</span>
+                <span class="metric-label">Objectif A380</span>
+            </div>
+        </div>
+
+        <div class="callout-info">
+            <strong>Conclusion — l'autodétection est la clé :</strong>
+            Sans autodétection, $P\{E_{SF}\} = 3 \times 10^{-8}$ — 30 fois trop élevé
+            pour l'A380. Avec un taux de couverture $c = 0{,}9$, on atteint
+            $3 \times 10^{-9}$ — 3 fois l'objectif. Pour atteindre exactement
+            $10^{-9}$, il faudrait un taux de couverture $c = 1 - \frac{1}{9} \approx 0{,}967$
+            ou une architecture différente (quadruplex, par exemple). C'est pourquoi
+            les systèmes de commandes de vol des avions modernes combinent
+            redondance et mécanismes d'autodétection sophistiqués.
+        </div>
+
+        <p class="source">ISAE ENSMA — Systèmes avioniques, cours 2025/2026, slides 138–141</p>
+
+    </div>
+
+</body>
+</html>
